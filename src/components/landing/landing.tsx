@@ -61,9 +61,9 @@ export function Landing() {
         )}
       </header>
 
-      <section className="mx-auto grid max-w-6xl items-center gap-16 px-5 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
+      <section className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-16 lg:py-20">
         <div>
-          <h1 className="max-w-xl font-serif text-[2.75rem] leading-[1.02] tracking-[-0.035em] sm:text-[4.25rem]">
+          <h1 className="max-w-xl font-serif text-[2.4rem] leading-[1.05] tracking-[-0.035em] sm:text-5xl lg:text-[3.25rem]">
             {ru.hero.title}
           </h1>
           <p className="mt-6 max-w-lg text-base leading-7 text-[#5f584f]">{ru.hero.subtitle}</p>
@@ -102,12 +102,7 @@ export function Landing() {
             ))}
           </div>
         </div>
-        <PhoneDemo
-          shop={shop}
-          image={products[0]?.image ?? "/demo/peony.jpg"}
-          product={products[0]?.name ?? "Пионовый сад"}
-          price={products[0]?.price ?? 28000}
-        />
+        <PhoneDemo shop={shop} products={products} />
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-8">
@@ -234,7 +229,7 @@ export function Landing() {
 
       {open && (
         <div className="fixed inset-0 z-50 overflow-auto bg-[#f3efe8]" role="dialog" aria-modal="true" aria-label={ru.templates[open].name}>
-          <button type="button" onClick={() => setOpen(null)} className="fixed top-4 right-4 z-10 bg-[#1c1915] px-3 py-2 text-sm text-[#f6f3ee]">
+          <button type="button" onClick={() => setOpen(null)} className="fixed top-4 right-4 z-[80] rounded-full bg-white px-4 py-2 text-base text-[#14120f] shadow-lg">
             {ru.nav.close}
           </button>
           <Storefront bundle={previewBundle(shop, niche, open)} template={open} accent={TEMPLATE_COLORS[open]} />

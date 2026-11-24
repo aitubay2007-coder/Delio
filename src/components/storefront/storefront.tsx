@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from "framer-motion"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { TEMPLATE_THEME, isOpenNow, storeAcceptsOrders, todayHours } from "@/lib/catalog"
 import { deriveAccent } from "@/lib/color"
-import { deriveSource, formatMoney, orderNumber, todayIso, utmPayload } from "@/lib/format"
+import { addDaysIso, deriveSource, formatMoney, orderNumber, todayIso, utmPayload } from "@/lib/format"
 import { createClient } from "@/lib/supabase/client"
 import type { Fulfillment, Product, StoreBundle, TemplateId } from "@/lib/types"
 import { ru } from "@/i18n/ru"
@@ -112,7 +112,7 @@ export function Storefront({
         await wait(1200)
         if (stop) return
         setStep("form")
-        await wait(3400)
+        await wait(5200)
         if (stop) return
         setStep("review")
         await wait(2600)
@@ -216,7 +216,7 @@ export function Storefront({
       />
 
       {count > 0 && !demo && (
-        <div className={embedded ? "sticky bottom-0 z-30 px-4 pb-4" : "fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"}>
+        <div className={embedded ? "sticky bottom-0 z-30 flex justify-center px-4 pb-4" : "pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"}>
           <motion.button
             type="button"
             onClick={() => {
@@ -225,7 +225,7 @@ export function Storefront({
             }}
             animate={reduce ? undefined : { scale: [1, 1.03, 1] }}
             key={pulse}
-            className="mx-auto flex w-full max-w-md items-center justify-between px-5 py-3 text-sm shadow-lg"
+            className="pointer-events-auto flex w-full max-w-md items-center justify-between px-5 py-3.5 text-base shadow-[0_16px_40px_rgba(20,18,15,0.2)]"
             style={{
               background: "var(--sf-button-bg)",
               color: "var(--sf-button-text)",
@@ -310,7 +310,7 @@ export function Storefront({
       >
         <SheetContent side="bottom" className="sf-sheet overflow-y-auto" style={vars}>
           <SheetHeader>
-            <SheetTitle>{step === "review" ? ru.store.messageTitle : ru.store.cart}</SheetTitle>
+            <SheetTitle>{step === "review" ? ru.store.messageTitle : step === "form" ? "Оформление" : ru.store.cart}</SheetTitle>
             <SheetDescription className="sr-only">{bundle.store.name}</SheetDescription>
           </SheetHeader>
           <Checkout
@@ -397,6 +397,8 @@ function Checkout({
   const [time, setTime] = useState("")
   const [comment, setComment] = useState("")
   const [extras, setExtras] = useState<Record<string, string>>({})
+  const [part, setPart] = useState<"who" | "where" | "when">("who")
+  const [giftOpen, setGiftOpen] = useState(false)
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
   const [number, setNumber] = useState("")
@@ -431,10 +433,14 @@ function Checkout({
     void (async () => {
       await new Promise((resolve) => window.setTimeout(resolve, 0))
       if (cancelled) return
+      setPart("who")
       await typeInto(setName, "Алия")
       await typeInto(setPhone, "+77010000001")
+      if (cancelled) return
+      setPart("where")
       await typeInto(setAddress, "ул. Абая 10")
       if (cancelled) return
+      setPart("when")
       setDate("2026-11-25")
       setTime("14:00")
     })()
@@ -588,10 +594,10 @@ function Checkout({
       <div className="space-y-4 px-4 pb-6">
         {lines.map((line) => (
           <div key={line.productId} className="flex items-center gap-3">
-            <Frame path={line.product.photos[0]?.storage_path} alt="" className="h-16 w-14" />
+            <Frame path={line.product.photos[0]?.storage_path} alt="" className="h-16 w-16 rounded-xl" />
             <div className="min-w-0 flex-1">
-              <p className="truncate">{line.product.name}</p>
-              <p className="text-sm" style={{ color: "var(--sf-text)" }}>
+              <p className="truncate text-base">{line.product.name}</p>
+              <p className="text-base" style={{ color: "var(--sf-text)" }}>
                 {formatMoney(line.product.price)}
               </p>
             </div>
@@ -625,100 +631,186 @@ function Checkout({
   }
 
   if (step === "form") {
+    const days = dateChoices(store.working_hours.timezone)
+    const times = ["10:00", "12:00", "14:00", "16:00", "18:00"]
+    const giftFields = store.order_form.fields
+    function nextPart() {
+      if (part === "who") {
+        if (name.trim().length < 2) return setError("Напишите имя.")
+        if (phone.replace(/\D/g, "").length < 10) return setError("Напишите телефон.")
+        setError("")
+        setPart("where")
+        return
+      }
+      if (part === "where") {
+        if (fulfillment === "delivery" && address.trim().length < 4) return setError("Напишите адрес.")
+        setError("")
+        setPart("when")
+        return
+      }
+      const problem = validate()
+      if (problem) {
+        setError(problem)
+        return
+      }
+      if (!number) setNumber(orderNumber())
+      setError("")
+      setStep("review")
+    }
     return (
-      <form
-        className="space-y-3 px-4 pb-8"
-        onSubmit={(event) => {
-          event.preventDefault()
-          const problem = validate()
-          if (problem) {
-            setError(problem)
-            return
-          }
-          if (!number) setNumber(orderNumber())
-          setError("")
-          setStep("review")
-        }}
-      >
-        {store.delivery_enabled && store.pickup_enabled && (
-          <div className="grid grid-cols-2 gap-2">
-            {(["delivery", "pickup"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setFulfillment(option)}
-                className="h-10 border text-sm"
-                style={{
-                  borderColor: fulfillment === option ? "var(--sf-ink)" : "var(--sf-line)",
-                  background: fulfillment === option ? "var(--sf-soft)" : "transparent",
-                  borderRadius: "var(--sf-radius)",
-                }}
-              >
-                {option === "delivery" ? ru.store.delivery : ru.store.pickup}
-              </button>
-            ))}
-          </div>
-        )}
-        <Field label={ru.store.name} value={name} onChange={setName} />
-        <Field label={ru.store.phone} value={phone} onChange={setPhone} inputMode="tel" />
-        {fulfillment === "delivery" && <Field label={ru.store.address} value={address} onChange={setAddress} />}
-        {fulfillment === "delivery" && store.delivery_zones.length > 0 && (
-          <label className="block text-sm">
-            <span style={{ color: "var(--sf-muted)" }}>{ru.store.zone}</span>
-            <select
-              value={zoneId}
-              onChange={(event) => setZoneId(event.target.value)}
-              className="mt-1 h-11 w-full border bg-transparent px-3"
-              style={{ borderColor: "var(--sf-line)", borderRadius: "var(--sf-radius)" }}
-            >
-              {store.delivery_zones.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name} · {formatMoney(item.price)}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <div className="grid grid-cols-2 gap-2">
-          <label className="block text-sm">
-            <span style={{ color: "var(--sf-muted)" }}>{ru.store.date}</span>
-            <input type="date" required value={date} min={todayIso(store.working_hours.timezone)} onChange={(event) => setDate(event.target.value)} className="mt-1 h-11 w-full border bg-transparent px-3" style={{ borderColor: "var(--sf-line)", borderRadius: "var(--sf-radius)" }} />
-          </label>
-          <label className="block text-sm">
-            <span style={{ color: "var(--sf-muted)" }}>{ru.store.time}</span>
-            <input type="time" required value={time} onChange={(event) => setTime(event.target.value)} className="mt-1 h-11 w-full border bg-transparent px-3" style={{ borderColor: "var(--sf-line)", borderRadius: "var(--sf-radius)" }} />
-          </label>
+      <div className="flex max-h-[min(78dvh,680px)] flex-col">
+        <div className="space-y-4 overflow-y-auto px-5 pb-4">
+          <p className="text-sm tracking-[0.12em] uppercase" style={{ color: "var(--sf-muted)" }}>
+            {part === "who" ? "Контакты" : part === "where" ? "Доставка" : "Когда привезти"}
+          </p>
+          {part === "who" && (
+            <>
+              <Field label={ru.store.name} value={name} onChange={setName} />
+              <Field label={ru.store.phone} value={phone} onChange={setPhone} inputMode="tel" />
+            </>
+          )}
+          {part === "where" && (
+            <>
+              {store.delivery_enabled && store.pickup_enabled && (
+                <div className="grid grid-cols-2 gap-2">
+                  {(["delivery", "pickup"] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setFulfillment(option)}
+                      className="h-12 text-base"
+                      style={{
+                        borderRadius: "var(--sf-radius)",
+                        background: fulfillment === option ? "var(--sf-button-bg)" : "transparent",
+                        color: fulfillment === option ? "var(--sf-button-text)" : "var(--sf-ink)",
+                        border: fulfillment === option ? "none" : "1px solid var(--sf-line)",
+                      }}
+                    >
+                      {option === "delivery" ? ru.store.delivery : ru.store.pickup}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {fulfillment === "delivery" && <Field label={ru.store.address} value={address} onChange={setAddress} />}
+              {fulfillment === "delivery" && store.delivery_zones.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {store.delivery_zones.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setZoneId(item.id)}
+                      className="rounded-full px-3 py-2 text-base"
+                      style={{
+                        background: zoneId === item.id ? "var(--sf-button-bg)" : "transparent",
+                        color: zoneId === item.id ? "var(--sf-button-text)" : "var(--sf-ink)",
+                        border: zoneId === item.id ? "none" : "1px solid var(--sf-line)",
+                      }}
+                    >
+                      {item.name} · {formatMoney(item.price)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+          {part === "when" && (
+            <>
+              <p className="text-base" style={{ color: "var(--sf-muted)" }}>{ru.store.date}</p>
+              <div className="flex flex-wrap gap-2">
+                {days.map((day) => (
+                  <button
+                    key={day.iso}
+                    type="button"
+                    onClick={() => setDate(day.iso)}
+                    className="rounded-full px-3 py-2 text-base"
+                    style={{
+                      background: date === day.iso ? "var(--sf-button-bg)" : "transparent",
+                      color: date === day.iso ? "var(--sf-button-text)" : "var(--sf-ink)",
+                      border: date === day.iso ? "none" : "1px solid var(--sf-line)",
+                    }}
+                  >
+                    {day.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-base" style={{ color: "var(--sf-muted)" }}>{ru.store.time}</p>
+              <div className="flex flex-wrap gap-2">
+                {times.map((slot) => (
+                  <button
+                    key={slot}
+                    type="button"
+                    onClick={() => setTime(slot)}
+                    className="rounded-full px-3 py-2 text-base"
+                    style={{
+                      background: time === slot ? "var(--sf-button-bg)" : "transparent",
+                      color: time === slot ? "var(--sf-button-text)" : "var(--sf-ink)",
+                      border: time === slot ? "none" : "1px solid var(--sf-line)",
+                    }}
+                  >
+                    {slot}
+                  </button>
+                ))}
+              </div>
+              {giftFields.length > 0 && (
+                <div className="rounded-2xl border" style={{ borderColor: "var(--sf-line)" }}>
+                  <button type="button" onClick={() => setGiftOpen((open) => !open)} className="flex w-full items-center justify-between px-4 py-3 text-left text-base">
+                    Открытка и получатель
+                    <span>{giftOpen ? "–" : "+"}</span>
+                  </button>
+                  {giftOpen && (
+                    <div className="space-y-3 px-4 pb-4">
+                      {giftFields.map((field) =>
+                        field.type === "checkbox" ? (
+                          <label key={field.key} className="flex items-center gap-2 text-base">
+                            <input
+                              type="checkbox"
+                              checked={extras[field.key] === "да"}
+                              onChange={(event) => setExtras((current) => ({ ...current, [field.key]: event.target.checked ? "да" : "" }))}
+                            />
+                            {field.label}
+                          </label>
+                        ) : (
+                          <Field
+                            key={field.key}
+                            label={field.label}
+                            value={extras[field.key] ?? ""}
+                            onChange={(value) => setExtras((current) => ({ ...current, [field.key]: value }))}
+                            multiline={field.type === "textarea"}
+                          />
+                        ),
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              <Field label={ru.store.comment} value={comment} onChange={setComment} multiline />
+              <Row label={ru.store.total} value={formatMoney(total)} />
+            </>
+          )}
+          {error && <p className="text-base">{error}</p>}
         </div>
-        {store.order_form.fields.map((field) =>
-          field.type === "checkbox" ? (
-            <label key={field.key} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={extras[field.key] === "да"}
-                onChange={(event) => setExtras((current) => ({ ...current, [field.key]: event.target.checked ? "да" : "" }))}
-              />
-              {field.label}
-            </label>
-          ) : (
-            <Field
-              key={field.key}
-              label={field.label}
-              value={extras[field.key] ?? ""}
-              onChange={(value) => setExtras((current) => ({ ...current, [field.key]: value }))}
-              multiline={field.type === "textarea"}
-            />
-          ),
-        )}
-        <Field label={ru.store.comment} value={comment} onChange={setComment} multiline />
-        <Row label={ru.store.goods} value={formatMoney(subtotal)} />
-        {fulfillment === "delivery" && <Row label={ru.store.delivery} value={formatMoney(deliveryPrice)} />}
-        <Row label={ru.store.total} value={formatMoney(total)} />
-        {error && <p className="text-sm" style={{ color: "var(--sf-text)" }}>{error}</p>}
-        <div className="flex gap-2">
-          <button type="button" onClick={() => setStep("cart")} className="h-12 flex-1 border text-sm" style={{ borderColor: "var(--sf-line)", borderRadius: "var(--sf-radius)" }}>{ru.store.back}</button>
-          <button type="submit" className="h-12 flex-[2] text-sm" style={{ background: "var(--sf-button-bg)", color: "var(--sf-button-text)", borderRadius: "var(--sf-radius)" }}>{ru.store.messageTitle}</button>
+        <div className="sticky bottom-0 flex gap-2 border-t px-5 py-3" style={{ borderColor: "var(--sf-line)", background: "var(--sf-bg)" }}>
+          <button
+            type="button"
+            onClick={() => {
+              if (part === "who") setStep("cart")
+              else setPart(part === "when" ? "where" : "who")
+            }}
+            className="h-12 flex-1 border text-base"
+            style={{ borderColor: "var(--sf-line)", borderRadius: "var(--sf-radius)" }}
+          >
+            {ru.store.back}
+          </button>
+          <button
+            type="button"
+            onClick={nextPart}
+            className="h-12 flex-[2] text-base"
+            style={{ background: "var(--sf-button-bg)", color: "var(--sf-button-text)", borderRadius: "var(--sf-radius)" }}
+          >
+            {part === "when" ? ru.store.messageTitle : "Дальше"}
+          </button>
         </div>
-      </form>
+      </div>
     )
   }
 
@@ -759,11 +851,11 @@ function Field({
   multiline?: boolean
   inputMode?: "tel" | "text"
 }) {
-  const className = "mt-1 w-full border bg-transparent px-3 text-base"
-  const style = { borderColor: "var(--sf-line)", borderRadius: "var(--sf-radius)" }
+  const className = "mt-1.5 w-full border bg-transparent px-3 text-base"
+  const style = { borderColor: "var(--sf-line)", borderRadius: "var(--sf-radius)", color: "var(--sf-ink)" }
   return (
-    <label className="block text-sm">
-      <span style={{ color: "var(--sf-muted)" }}>{label}</span>
+    <label className="block text-base">
+      <span style={{ color: "var(--sf-ink)" }}>{label}</span>
       {multiline ? (
         <textarea value={value} onChange={(event) => onChange(event.target.value)} className={`${className} min-h-20 py-2`} style={style} />
       ) : (
@@ -780,6 +872,17 @@ function Row({ label, value }: { label: string; value: string }) {
       <span>{value}</span>
     </div>
   )
+}
+
+function dateChoices(timeZone: string) {
+  const start = todayIso(timeZone)
+  return [0, 1, 2, 3, 4, 5].map((offset) => {
+    const iso = addDaysIso(start, offset)
+    const [, month, day] = iso.split("-")
+    const short = `${day}.${month}`
+    const label = offset === 0 ? `Сегодня ${short}` : offset === 1 ? `Завтра ${short}` : short
+    return { iso, label }
+  })
 }
 
 async function logEvent(

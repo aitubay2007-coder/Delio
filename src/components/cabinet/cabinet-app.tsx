@@ -88,12 +88,12 @@ export function CabinetApp(props: Props) {
   }
 
   return (
-    <div className="min-h-dvh bg-[#f4f1eb] pb-36 md:pb-10">
-      <div className="mx-auto grid max-w-6xl md:grid-cols-[232px_1fr]">
+    <div className="min-h-dvh bg-[#f4f1eb] pb-24 md:pb-10">
+      <div className="mx-auto grid max-w-7xl md:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="hidden border-r border-[#14120f]/8 px-4 py-8 md:block">
           <Link href="/" className="font-serif text-2xl tracking-tight">{ru.brand}</Link>
-          {props.email && <p className="mt-2 truncate text-xs text-[#6f675e]">{props.email}</p>}
-          <nav className="mt-8 grid gap-1 text-sm">
+          {props.email && <p className="mt-2 truncate text-base text-[#5c564e]">{props.email}</p>}
+          <nav className="mt-8 grid gap-1 text-base">
             {NAV.map(([id, label]) => (
               <Link key={id} href={href(id)} className={`rounded-xl px-3 py-2.5 ${section === id ? "bg-[#14120f] text-[#f6f3ee]" : "hover:bg-[#14120f]/5"}`}>{label}</Link>
             ))}
@@ -101,13 +101,13 @@ export function CabinetApp(props: Props) {
             <Link href={href("stats")} className={`rounded-xl px-3 py-2.5 ${section === "stats" ? "bg-[#14120f] text-[#f6f3ee]" : "hover:bg-[#14120f]/5"}`}>{ru.cabinet.stats}</Link>
           </nav>
         </aside>
-        <div className="px-4 py-6 md:px-10">
-          {props.mode === "preview" && <p className="mb-4 border border-dashed border-[#1c1915]/30 px-3 py-2 text-sm">{ru.cabinet.previewBanner}</p>}
+        <div className="min-w-0 px-4 py-6 md:px-8 lg:px-10">
+          {props.mode === "preview" && <p className="mb-4 rounded-2xl border border-dashed border-[#1c1915]/30 bg-white/60 px-4 py-3 text-base">{ru.cabinet.previewBanner}</p>}
           <header className="flex flex-col gap-4 border-b border-[#14120f]/8 pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[11px] tracking-[0.16em] uppercase text-[#6f675e]">{ru.brand}</p>
-              <h1 className="mt-1 font-serif text-[2rem] leading-none tracking-tight">{store.name}</h1>
-              <p className="mt-2 text-sm text-[#6f675e]">{statusLine(store)}</p>
+              <p className="text-xs tracking-[0.16em] uppercase text-[#5c564e]">{ru.brand}</p>
+              <h1 className="mt-1 font-serif text-4xl leading-none tracking-tight">{store.name}</h1>
+              <p className="mt-2 text-base text-[#5c564e]">{statusLine(store)}</p>
             </div>
             <Link href={`/s/${store.slug}`} className="inline-flex h-11 items-center justify-center rounded-full border border-[#14120f]/15 px-4 text-sm">{ru.cabinet.openStore}</Link>
           </header>
@@ -133,14 +133,14 @@ export function CabinetApp(props: Props) {
             {section === "stats" && <Stats events={props.events} orders={orders} products={products} capped={props.eventsCapped} />}
             {section === "more" && <More base={props.base} mode={props.mode} />}
             {(section === "overview" || section === "") && (
-              <Overview store={store} orders={orders} />
+              <Overview store={store} orders={orders} events={props.events} example={props.mode === "preview" || store.is_demo} />
             )}
           </div>
         </div>
       </div>
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[#14120f]/10 bg-[#fffcf8]/95 pb-[env(safe-area-inset-bottom)] text-center backdrop-blur md:hidden">
         {NAV.map(([id, label, Icon]) => (
-          <Link key={id} href={href(id)} className={`flex flex-col items-center gap-1 px-1 py-2.5 text-[10px] ${section === id ? "text-[#14120f]" : "text-[#8a8175]"}`}>
+          <Link key={id} href={href(id)} className={`flex flex-col items-center gap-1 px-1 py-2.5 text-xs ${section === id ? "text-[#14120f]" : "text-[#6b645c]"}`}>
             <Icon className="size-4" strokeWidth={section === id ? 2.25 : 1.75} />
             {label}
           </Link>
@@ -157,7 +157,7 @@ function statusLine(store: Store) {
   return `${ru.cabinet.trial} · ${daysLeft(trialDaysLeft(store))}`
 }
 
-function Overview({ store, orders }: { store: Store; orders: ShopOrder[] }) {
+function Overview({ store, orders, events, example }: { store: Store; orders: ShopOrder[]; events: AnalyticsEvent[]; example: boolean }) {
   const [link, setLink] = useState("")
   const [qr, setQr] = useState("")
   const [copied, setCopied] = useState(false)
@@ -170,26 +170,80 @@ function Overview({ store, orders }: { store: Store; orders: ShopOrder[] }) {
       })
       .catch(() => undefined)
   }, [store.slug])
+  const [now] = useState(() => Date.now())
+  const visits = useMemo(() => {
+    const days = 7
+    return Array.from({ length: days }, (_, index) => {
+      const date = new Date(now)
+      date.setDate(date.getDate() - (days - 1 - index))
+      const key = date.toLocaleDateString("en-CA")
+      return events.filter((event) => event.event_type === "store_view" && new Date(event.created_at).toLocaleDateString("en-CA") === key).length
+    })
+  }, [events, now])
+  const series = example && visits.every((value) => value === 0) ? [3, 5, 4, 8, 6, 9, 7] : visits
+  const newest = orders.filter((order) => order.status === "new").length
+  const confirmed = orders.filter((order) => order.status === "confirmed").length
+  const sum = orders.reduce((total, order) => total + order.total, 0)
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {!storeAcceptsOrders(store) && <p className="md:col-span-2 text-sm leading-6">{ru.cabinet.trialEnded}</p>}
-      <section className="lift rounded-2xl border border-white/70 bg-[#fffcf8]/90 p-5 backdrop-blur-sm">
-        <h2 className="text-sm tracking-[0.14em] uppercase text-[#6b645c]">{ru.share.title}</h2>
-        <p className="mt-3 break-all text-sm">{link}</p>
-        <Button type="button" variant="outline" className="mt-3 h-10" onClick={() => { void navigator.clipboard.writeText(link); setCopied(true) }}>
-          {copied ? ru.share.copied : ru.share.copy}
-        </Button>
-      </section>
-      <section className="lift rounded-2xl border border-white/70 bg-[#fffcf8]/90 p-5 backdrop-blur-sm">
-        <h2 className="text-sm tracking-[0.14em] uppercase text-[#6b645c]">{ru.share.qr}</h2>
-        {qr && <img src={qr} alt={ru.share.qr} className="mt-3 h-40 w-40" />}
-      </section>
-      <section className="border border-[#1c1915]/10 bg-[#faf8f5] p-4 md:col-span-2">
-        <h2 className="text-sm tracking-[0.14em] uppercase text-[#6b645c]">{ru.cabinet.orders}</h2>
-        <p className="mt-2 font-serif text-3xl">{orders.length}</p>
-        <p className="mt-2 text-sm text-[#6b645c]">{ru.orders.honest}</p>
-      </section>
+    <div className="space-y-4">
+      {!storeAcceptsOrders(store) && <p className="text-base leading-6">{ru.cabinet.trialEnded}</p>}
+      {example && <p className="text-base text-[#5c564e]">Цифры и заказы ниже — пример, не живая статистика.</p>}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Metric label="Новые" value={String(newest)} />
+        <Metric label="Подтверждённые" value={String(confirmed)} />
+        <Metric label={ru.orders.total} value={formatMoney(sum)} />
+      </div>
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
+        <section className="rounded-3xl border border-[#14120f]/8 bg-white p-5 shadow-[0_16px_40px_rgba(20,18,15,0.05)]">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-xl">{ru.cabinet.orders}</h2>
+            <span className="text-base text-[#5c564e]">{orders.length}</span>
+          </div>
+          <ul className="mt-4 divide-y divide-[#14120f]/8">
+            {orders.slice(0, 6).map((order) => (
+              <li key={order.id} className="flex items-center justify-between gap-3 py-3">
+                <div className="min-w-0">
+                  <p className="text-base">{order.customer_name}</p>
+                  <p className="text-sm text-[#5c564e]">№{order.order_number} · {order.items[0]?.name}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-base">{formatMoney(order.total)}</p>
+                  <p className="text-sm text-[#5c564e]">{ru.orders.status[order.status]}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {!orders.length && <p className="mt-3 text-base text-[#5c564e]">{ru.orders.empty}</p>}
+        </section>
+        <div className="grid gap-4">
+          <section className="rounded-3xl border border-[#14120f]/8 bg-white p-5 shadow-[0_16px_40px_rgba(20,18,15,0.05)]">
+            <h2 className="text-base text-[#5c564e]">{example ? "Просмотры, пример" : ru.stats.chart}</h2>
+            <Sparkline values={series} />
+          </section>
+          <section className="rounded-3xl border border-[#14120f]/8 bg-white p-5 shadow-[0_16px_40px_rgba(20,18,15,0.05)]">
+            <h2 className="text-base text-[#5c564e]">{ru.share.title}</h2>
+            <p className="mt-2 break-all text-base">{link}</p>
+            <Button type="button" variant="outline" className="mt-3 h-11" onClick={() => { void navigator.clipboard.writeText(link); setCopied(true) }}>
+              {copied ? ru.share.copied : ru.share.copy}
+            </Button>
+            {qr && <img src={qr} alt={ru.share.qr} className="mt-4 h-36 w-36" />}
+          </section>
+        </div>
+      </div>
     </div>
+  )
+}
+
+function Sparkline({ values }: { values: number[] }) {
+  const max = Math.max(1, ...values)
+  const width = 320
+  const height = 72
+  const step = values.length > 1 ? width / (values.length - 1) : width
+  const points = values.map((value, index) => `${index * step},${height - (value / max) * (height - 8) - 4}`).join(" ")
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="mt-3 h-20 w-full" role="img" aria-label="Просмотры за неделю">
+      <polyline points={points} fill="none" stroke="#1c1915" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
   )
 }
 

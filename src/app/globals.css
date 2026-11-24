@@ -150,12 +150,16 @@
 
 .sf-sheet {
   height: auto !important;
-  max-height: min(92dvh, 880px) !important;
+  max-height: min(92dvh, 760px) !important;
+  width: min(560px, calc(100vw - 24px)) !important;
+  left: 50% !important;
+  right: auto !important;
+  margin-left: calc(min(560px, calc(100vw - 24px)) / -2) !important;
   background: var(--sf-bg) !important;
   color: var(--sf-ink) !important;
   border-color: color-mix(in srgb, var(--sf-ink) 12%, transparent) !important;
   border-radius: 28px 28px 0 0 !important;
-  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  padding-bottom: 0 !important;
   box-shadow:
     0 -1px 0 rgba(255, 255, 255, 0.4) inset,
     0 -24px 60px rgba(20, 18, 15, 0.18) !important;
@@ -203,6 +207,11 @@
 @keyframes phone-stage {
   0%, 28% { opacity: 1; }
   36%, 100% { opacity: 0; }
+}
+
+@keyframes tap-ripple {
+  0% { transform: translate(-50%, -50%) scale(0.35); opacity: 0.45; }
+  100% { transform: translate(-50%, -50%) scale(1.7); opacity: 0; }
 }
 
 .skeleton {

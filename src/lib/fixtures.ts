@@ -207,6 +207,29 @@ export function previewOrders(): ShopOrder[] {
       total: 22000,
       created_at: "2026-11-23T10:00:00.000Z",
     },
+    {
+      id: "66666666-6666-4666-8666-666666666663",
+      store_id: STORE_ID,
+      order_number: "C9P1WE",
+      status: "new",
+      customer_name: "Мадина",
+      customer_phone: "+77010000003",
+      fulfillment: "delivery",
+      address: "Пример, пр. Достык 12",
+      delivery_zone_id: "center",
+      delivery_zone_name: "В пределах города",
+      delivery_price: 2000,
+      scheduled_date: "2026-11-24",
+      scheduled_time: "12:00",
+      comment: "Пример заказа",
+      extra_fields: {},
+      items: [
+        { product_id: "33333333-3333-4333-8333-333333333332", name: "Ранункулюсы", qty: 1, price: 19000 },
+      ],
+      subtotal: 19000,
+      total: 21000,
+      created_at: "2026-11-24T06:30:00.000Z",
+    },
   ]
 }
 
@@ -214,10 +237,11 @@ export function previewEvents() {
   const store = STORE_ID
   const rows = []
   const kinds = ["store_view", "product_view", "add_to_cart", "whatsapp_click"] as const
+  const views = [2, 6, 3, 8, 5, 9, 4]
   for (let day = 0; day < 7; day += 1) {
     const date = `2026-11-${String(18 + day).padStart(2, "0")}`
     for (const kind of kinds) {
-      const count = kind === "store_view" ? 4 : kind === "whatsapp_click" ? 1 : 2
+      const count = kind === "store_view" ? views[day] : kind === "whatsapp_click" ? 1 : Math.max(1, Math.round(views[day] / 2))
       for (let n = 0; n < count; n += 1) {
         rows.push({
           id: `${kind}-${day}-${n}`,
