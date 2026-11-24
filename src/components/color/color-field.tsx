@@ -47,7 +47,7 @@ export function ColorField({
         })}
       </div>
       <div
-        className="relative aspect-square w-full max-w-[220px] cursor-crosshair rounded-2xl"
+        className="relative h-44 w-44 cursor-crosshair rounded-2xl"
         style={{ background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${hsv.h} 100% 50%))` }}
         onPointerDown={(event) => {
           const move = (point: PointerEvent | ReactPointerEvent<HTMLDivElement>) => {

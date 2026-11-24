@@ -88,7 +88,7 @@ export function CabinetApp(props: Props) {
   }
 
   return (
-    <div className="min-h-dvh bg-[#f4f1eb] pb-28 md:pb-10">
+    <div className="min-h-dvh bg-[#f4f1eb] pb-36 md:pb-10">
       <div className="mx-auto grid max-w-6xl md:grid-cols-[232px_1fr]">
         <aside className="hidden border-r border-[#14120f]/8 px-4 py-8 md:block">
           <Link href="/" className="font-serif text-2xl tracking-tight">{ru.brand}</Link>
