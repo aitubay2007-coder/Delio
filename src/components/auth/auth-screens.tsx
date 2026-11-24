@@ -80,6 +80,7 @@ export function SignupScreen() {
 
   return (
     <Shell title={ru.auth.signupTitle}>
+      <p className="mb-5 text-sm leading-6 text-[#5c564e]">{ru.auth.signupLead}</p>
       <form
         className="space-y-4"
         onSubmit={async (event) => {

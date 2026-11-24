@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import Link from "next/link"
-import { motion, useInView, useReducedMotion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import { defaultHours, defaultOrderForm, defaultZones } from "@/lib/catalog"
 import { EXAMPLE_SHOPS } from "@/lib/examples"
 import { ru } from "@/i18n/ru"
+import { PhoneDemo } from "@/components/landing/phone-demo"
 import { Storefront } from "@/components/storefront/storefront"
 import type { NicheId, StoreBundle, TemplateId } from "@/lib/types"
 import { TEMPLATES } from "@/lib/types"
@@ -28,7 +29,6 @@ export function Landing() {
   const [menu, setMenu] = useState(false)
   const shop = name.trim() || EXAMPLE_SHOPS[niche].fallbackName
   const products = EXAMPLE_SHOPS[niche].products
-  const demoBundle = useMemo(() => previewBundle(shop, niche, "boutique"), [shop, niche])
 
   return (
     <div className="bg-[#f3efe8] text-[#1c1915]">
@@ -71,9 +71,11 @@ export function Landing() {
             <Link href="/signup" className="inline-flex h-12 items-center justify-center bg-[#1c1915] px-6 text-sm text-[#f6f3ee]">{ru.hero.cta}</Link>
             <Link href="/s/primer" className="inline-flex h-12 items-center justify-center border border-[#1c1915]/20 px-6 text-sm">{ru.hero.example}</Link>
           </div>
-          <p className="mt-3 text-sm text-[#6b645c]">{ru.hero.trial}</p>
+          <p className="mt-3 max-w-md text-sm leading-6 text-[#6b645c]">{ru.hero.ctaNext}</p>
+          <p className="mt-1 max-w-md text-sm leading-6 text-[#6b645c]">{ru.hero.trial}</p>
           <label className="mt-10 block max-w-md">
             <span className="text-sm">{ru.hero.tryOn}</span>
+            <span className="mt-1 block text-xs leading-5 text-[#6f675e]">{ru.hero.tryOnHint}</span>
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -81,7 +83,8 @@ export function Landing() {
               className="mt-2 h-12 w-full border border-[#1c1915]/15 bg-[#faf8f5] px-4 outline-none focus:border-[#1c1915]"
             />
           </label>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <p className="mt-6 text-xs text-[#6f675e]">{ru.hero.nicheHint}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
             {NICHE_ORDER.map((id) => (
               <button
                 key={id}
@@ -99,9 +102,24 @@ export function Landing() {
             ))}
           </div>
         </div>
-        <DeviceFrame>
-          <Storefront demo embedded bundle={demoBundle} template="boutique" accent="#9A4D55" />
-        </DeviceFrame>
+        <PhoneDemo
+          shop={shop}
+          image={products[0]?.image ?? "/demo/peony.jpg"}
+          product={products[0]?.name ?? "Пионовый сад"}
+          price={products[0]?.price ?? 28000}
+        />
+      </section>
+
+      <section className="mx-auto max-w-6xl px-5 pb-8">
+        <h2 className="font-serif text-3xl tracking-[-0.04em]">{ru.landing.bentoTitle}</h2>
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          {ru.landing.bento.map((item) => (
+            <article key={item.title} className="lift rounded-2xl border border-white/80 bg-[#fffcf8] p-5">
+              <h3 className="text-lg tracking-[-0.03em]">{item.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-[#5c564e]">{item.text}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section id="templates" className="mx-auto max-w-6xl px-5 py-20">
@@ -126,17 +144,22 @@ export function Landing() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-6 px-5 py-8 md:grid-cols-2">
+      <section className="mx-auto max-w-6xl px-5 py-10">
+        <h2 className="font-serif text-3xl tracking-[-0.04em]">{ru.landing.compareTitle}</h2>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-[#5c564e]">{ru.landing.compareText}</p>
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
         <Reveal>
           <Compare title={ru.landing.without} messy />
         </Reveal>
         <Reveal>
           <Compare title={ru.landing.with} shop={shop} product={products[0]?.name ?? ru.store.cart} />
         </Reveal>
+      </div>
       </section>
 
       <section id="how" className="mx-auto max-w-6xl px-5 py-16">
         <h2 className="font-serif text-4xl">{ru.landing.howTitle}</h2>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-[#5c564e]">{ru.landing.howText}</p>
         <div className="mt-8 grid gap-10 md:grid-cols-2">
           <StepColumn title={ru.landing.owner} steps={ru.landing.ownerSteps} />
           <StepColumn title={ru.landing.shopper} steps={ru.landing.shopperSteps} />
@@ -150,23 +173,11 @@ export function Landing() {
           <span className="border border-[#1c1915]/20 px-2 py-1 text-xs tracking-wide uppercase">{ru.landing.sample}</span>
         </div>
         <p className="mt-3 max-w-xl text-sm leading-6 text-[#5f584f]">{ru.landing.sampleNote}</p>
-        <div className="mt-6 grid gap-3 sm:grid-cols-4">
-          {[
-            [ru.landing.visits, 128, ""],
-            [ru.landing.sources, 4, ""],
-            [ru.landing.toWhatsapp, 19, ""],
-            [ru.landing.conversion, 15, "%"],
-          ].map(([label, value, suffix]) => (
-            <div key={String(label)} className="lift rounded-2xl border border-[#14120f]/8 bg-[#fffcf8] p-4">
-              <p className="text-xs text-[#6b645c]">{label}</p>
-              <p className="mt-2 text-3xl tracking-[-0.04em]">
-                <CountUp value={Number(value)} />
-                {suffix}
-              </p>
-              <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[#8a8175]">{ru.landing.sample}</p>
-            </div>
+        <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+          {ru.landing.statsItems.map((item) => (
+            <li key={item} className="lift rounded-2xl border border-white/80 bg-[#fffcf8] px-4 py-4 text-sm leading-6">{item}</li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-12">
@@ -286,17 +297,6 @@ function previewBundle(name: string, niche: NicheId, template: TemplateId): Stor
   }
 }
 
-function DeviceFrame({ children }: { children: ReactNode }) {
-  return (
-    <div className="device relative mx-auto w-[320px] rounded-[46px] p-[11px]">
-      <div className="pointer-events-none absolute top-3 left-1/2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-black/80" />
-      <div className="pointer-events-none relative h-[640px] overflow-hidden rounded-[36px] bg-[#f7f4ef] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]">
-        {children}
-      </div>
-    </div>
-  )
-}
-
 function Miniature({
   template,
   shop,
@@ -363,26 +363,6 @@ function StepColumn({ title, steps }: { title: string; steps: readonly string[] 
       </ol>
     </div>
   )
-}
-
-function CountUp({ value }: { value: number }) {
-  const reduce = useReducedMotion()
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { once: true, margin: "-40px" })
-  const [current, setCurrent] = useState(reduce ? value : 0)
-  useEffect(() => {
-    if (!inView || reduce) return
-    const started = performance.now()
-    let frame = 0
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - started) / 900)
-      setCurrent(Math.round(value * (1 - (1 - progress) ** 3)))
-      if (progress < 1) frame = requestAnimationFrame(tick)
-    }
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
-  }, [inView, reduce, value])
-  return <span ref={ref}>{current}</span>
 }
 
 function Reveal({ children }: { children: ReactNode }) {

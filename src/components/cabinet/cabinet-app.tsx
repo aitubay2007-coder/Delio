@@ -151,7 +151,8 @@ export function CabinetApp(props: Props) {
 }
 
 function statusLine(store: Store) {
-  if (store.subscription_status === "active" || store.is_demo) return ru.cabinet.active
+  if (store.is_demo) return ru.cabinet.previewStatus
+  if (store.subscription_status === "active") return ru.cabinet.active
   if (!storeAcceptsOrders(store)) return ru.cabinet.trialEnded
   return `${ru.cabinet.trial} · ${daysLeft(trialDaysLeft(store))}`
 }

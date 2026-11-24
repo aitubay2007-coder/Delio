@@ -740,6 +740,7 @@ function Checkout({
       >
         {saving ? ru.store.sending : ru.store.send}
       </button>
+      <p className="text-xs leading-5" style={{ color: "var(--sf-muted)" }}>{ru.store.sendHint}</p>
       <button type="button" onClick={onClose} className="w-full text-sm" style={{ color: "var(--sf-muted)" }}>{ru.nav.close}</button>
     </div>
   )
