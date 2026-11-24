@@ -89,7 +89,7 @@ function StoreHeader({
   return (
     <header className={`px-5 pt-6 pb-4 ${centered ? "text-center" : ""}`}>
       <div className={`flex items-center gap-3 ${centered ? "justify-center" : ""}`}>
-        {logo && <img src={logo} alt="" className="h-10 w-10 object-cover" />}
+        {logo && <img src={logo} alt="" className="h-11 w-11 rounded-full object-cover" />}
         <div>
           <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: "var(--sf-muted)" }}>
             {ru.niches[bundle.store.niche]}
@@ -128,7 +128,7 @@ function Categories({
   if (!bundle.categories.length) return null
   const items = [{ id: "all", name: ru.store.all }, ...bundle.categories]
   return (
-    <div className={`sf-scroll flex gap-2 overflow-x-auto px-5 pb-4 ${template === "boutique" ? "justify-start md:justify-center" : ""}`}>
+    <div className={`sf-scroll flex gap-2 overflow-x-auto px-5 pr-10 pb-5 ${template === "boutique" ? "md:justify-center" : ""}`}>
       {items.map((item) => {
         const active = category === item.id
         return (
@@ -172,9 +172,9 @@ function Minimal({
       <ul className="mx-auto max-w-3xl">
         {products.map((product) => (
           <li key={product.id} className="border-t px-5" style={{ borderColor: "var(--sf-line)" }}>
-            <div className="flex items-center gap-4 py-4">
-              <button type="button" onClick={() => onOpen(product)} className="h-16 w-16 shrink-0">
-                <Frame path={product.photos[0]?.storage_path} alt={product.name} className="h-16 w-16" />
+            <div className="flex items-center gap-4 py-5">
+              <button type="button" onClick={() => onOpen(product)} className="h-20 w-16 shrink-0 overflow-hidden">
+                <Frame path={product.photos[0]?.storage_path} alt={product.name} className="h-20 w-16" />
               </button>
               <button type="button" onClick={() => onOpen(product)} className="min-w-0 flex-1 text-left">
                 <span className="block truncate text-[15px]">{product.name}</span>
@@ -416,7 +416,7 @@ function Cinematic({
     <main>
       <header className="sticky top-0 z-20 flex items-center justify-between px-5 py-4 backdrop-blur" style={{ background: "color-mix(in srgb, var(--sf-bg) 78%, transparent)" }}>
         <div className="flex items-center gap-3">
-          {logo && <img src={logo} alt="" className="h-8 w-8 object-cover" />}
+          {logo && <img src={logo} alt="" className="h-8 w-8 rounded-full object-cover" />}
           <div>
             <h1 className="text-sm tracking-[0.18em] uppercase">{bundle.store.name}</h1>
             <p className="text-xs" style={{ color: "var(--sf-muted)" }}>
@@ -437,7 +437,7 @@ function Cinematic({
                 <p className="mt-1 text-sm" style={{ color: "var(--sf-text)" }}>{formatMoney(product.price)}</p>
               </div>
             </button>
-            <div className="absolute top-4 right-4">
+            <div className="absolute right-4 bottom-24">
               <Add product={product} onAdd={onAdd} />
             </div>
           </article>

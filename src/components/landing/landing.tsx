@@ -32,7 +32,7 @@ export function Landing() {
 
   return (
     <div className="bg-[#f3efe8] text-[#1c1915]">
-      <header className="sticky top-0 z-40 border-b border-[#1c1915]/10 bg-[#f3efe8]/90 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-[#14120f]/8 bg-[#f6f4ef]/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <Link href="/" className="font-serif text-xl tracking-tight" aria-label={ru.a11y.logo}>
             {ru.brand}
@@ -61,9 +61,9 @@ export function Landing() {
         )}
       </header>
 
-      <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-20">
+      <section className="mx-auto grid max-w-6xl items-center gap-16 px-5 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
         <div>
-          <h1 className="max-w-xl font-serif text-[2.6rem] leading-[1.05] tracking-[-0.03em] sm:text-6xl">
+          <h1 className="max-w-xl font-serif text-[2.75rem] leading-[1.02] tracking-[-0.035em] sm:text-[4.25rem]">
             {ru.hero.title}
           </h1>
           <p className="mt-6 max-w-lg text-base leading-7 text-[#5f584f]">{ru.hero.subtitle}</p>
@@ -81,7 +81,7 @@ export function Landing() {
               className="mt-2 h-12 w-full border border-[#1c1915]/15 bg-[#faf8f5] px-4 outline-none focus:border-[#1c1915]"
             />
           </label>
-          <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-5 flex flex-wrap gap-2">
             {NICHE_ORDER.map((id) => (
               <button
                 key={id}
@@ -102,18 +102,18 @@ export function Landing() {
         <Phone shop={shop} products={products} />
       </section>
 
-      <section id="templates" className="mx-auto max-w-6xl px-5 py-16">
+      <section id="templates" className="mx-auto max-w-6xl px-5 py-20">
         <Reveal>
           <h2 className="font-serif text-4xl tracking-tight">{ru.landing.templatesTitle}</h2>
           <p className="mt-3 max-w-xl text-sm leading-6 text-[#5f584f]">{ru.landing.templatesText}</p>
         </Reveal>
-        <div className="mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible">
+        <div className="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible">
           {TEMPLATES.map((id) => (
             <button
               key={id}
               type="button"
               onClick={() => setOpen(id)}
-              className="w-[78%] shrink-0 snap-center border border-[#1c1915]/10 bg-[#faf8f5] p-4 text-left md:w-auto"
+              className="w-[82%] shrink-0 snap-center rounded-2xl border border-[#14120f]/10 bg-[#fffcf8] p-3 text-left shadow-[0_18px_50px_rgba(20,18,15,0.05)] transition-transform duration-300 hover:-translate-y-0.5 md:w-auto"
             >
               <Miniature template={id} shop={shop} products={products} color={TEMPLATE_COLORS[id]} />
               <h3 className="mt-4 text-lg">{ru.templates[id].name}</h3>
@@ -273,7 +273,7 @@ function previewBundle(name: string, niche: NicheId, template: TemplateId): Stor
           id: `preview-photo-${index}`,
           store_id: "preview-store",
           product_id: `preview-${niche}-${index}`,
-          storage_path: niche === "flowers" ? ["/demo/peony.svg", "/demo/ranunculus.svg", "/demo/roses.svg"][index] ?? "/demo/peony.svg" : panel(product.tone),
+          storage_path: product.image,
           sort_order: 0,
         },
       ],
@@ -281,42 +281,41 @@ function previewBundle(name: string, niche: NicheId, template: TemplateId): Stor
   }
 }
 
-function panel(color: string) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000"><rect width="800" height="1000" fill="${color}"/><circle cx="400" cy="470" r="140" fill="white" opacity="0.35"/></svg>`
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
-}
-
-function Phone({ shop, products }: { shop: string; products: { name: string; price: number; tone: string }[] }) {
+function Phone({ shop, products }: { shop: string; products: { name: string; price: number; tone: string; image: string }[] }) {
   const lines = useMemo(
     () => products.slice(0, 2).map((item) => `${item.name} × 1 — ${formatMoney(item.price)}`).join("\n"),
     [products],
   )
+  const hero = products[0]
   return (
-    <div className="mx-auto w-[280px] rounded-[2.2rem] border border-[#1c1915]/15 bg-[#1c1915] p-2 shadow-[0_30px_80px_rgba(28,25,21,0.12)]">
-      <div className="relative h-[560px] overflow-hidden rounded-[1.8rem] bg-[#f7f4ef]">
+    <div className="mx-auto w-[300px] rounded-[2.4rem] border border-[#14120f]/15 bg-[#14120f] p-2 shadow-[0_40px_80px_rgba(20,18,15,0.18)]">
+      <div className="relative h-[600px] overflow-hidden rounded-[1.9rem] bg-[#f7f4ef]">
         <div className="phone-loop grid h-full">
-          <div className="p-5">
-            <p className="text-xs tracking-[0.16em] uppercase text-[#6b645c]">{shop}</p>
-            <p className="mt-6 text-sm text-[#6b645c]">{ru.store.cart}</p>
-            <ul className="mt-3 space-y-3">
-              {products.slice(0, 2).map((item) => (
-                <li key={item.name} className="flex items-center gap-3 text-sm">
-                  <span className="h-10 w-10" style={{ background: item.tone }} />
-                  <span className="flex-1">{item.name}</span>
-                  <span>{formatMoney(item.price)}</span>
-                </li>
-              ))}
-            </ul>
+          <div className="flex h-full flex-col">
+            <img src={hero?.image} alt="" className="h-[340px] w-full object-cover" />
+            <div className="flex flex-1 flex-col px-4 py-4">
+              <p className="text-[11px] tracking-[0.16em] uppercase text-[#6b675f]">{shop}</p>
+              <ul className="mt-3 space-y-3">
+                {products.slice(0, 2).map((item) => (
+                  <li key={item.name} className="flex items-center gap-3 text-sm">
+                    <img src={item.image} alt="" className="h-11 w-11 rounded-md object-cover" />
+                    <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                    <span className="shrink-0 text-[#5c564e]">{formatMoney(item.price)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-          <div className="flex h-full flex-col justify-end p-5">
-            <p className="text-center text-sm">{shop}</p>
-            <div className="mt-auto bg-[#1c1915] py-3 text-center text-sm text-[#f6f3ee]">{ru.store.send}</div>
+          <div className="flex h-full flex-col bg-[#f7f4ef] p-5">
+            <p className="text-center text-sm tracking-wide">{shop}</p>
+            <img src={hero?.image} alt="" className="mt-4 h-48 w-full rounded-xl object-cover" />
+            <div className="mt-auto rounded-full bg-[#14120f] py-3 text-center text-sm text-[#f6f3ee]">{ru.store.send}</div>
           </div>
-          <div className="flex h-full items-end p-4">
-            <div className="w-full rounded-2xl bg-[#e7f6df] p-4 text-xs leading-5 text-[#17301c]">
-              <p className="mb-2 text-[11px] text-[#3d6b4a]">{shop}</p>
+          <div className="flex h-full items-end bg-[#efeae3] p-4">
+            <div className="w-full rounded-[22px] bg-[#e7f6df] p-4 text-[13px] leading-6 whitespace-pre-wrap text-[#17301c] shadow-[0_10px_30px_rgba(20,18,15,0.06)]">
+              <p className="mb-2 text-[11px] tracking-wide text-[#3d6b4a]">{shop}</p>
               {lines}
-              {"\n"}Итого: {formatMoney(products.slice(0, 2).reduce((sum, item) => sum + item.price, 0))}
+              {"\n\n"}Итого: {formatMoney(products.slice(0, 2).reduce((sum, item) => sum + item.price, 0))}
             </div>
           </div>
         </div>
@@ -333,22 +332,25 @@ function Miniature({
 }: {
   template: TemplateId
   shop: string
-  products: { name: string; price: number; tone: string }[]
+  products: { name: string; price: number; tone: string; image: string }[]
   color: string
 }) {
   const dark = template === "cinematic"
+  const lead = products[0]
   return (
-    <div className="aspect-[4/5] overflow-hidden p-3" style={{ background: dark ? "#100f0e" : "#f7f4ef", color: dark ? "#f4f0e8" : "#1c1915" }}>
-      <p className="truncate text-[10px] tracking-[0.14em] uppercase opacity-60">{shop}</p>
-      <div className={`mt-3 ${template === "minimal" ? "space-y-2" : "grid grid-cols-2 gap-2"}`}>
-        {products.slice(0, template === "minimal" ? 3 : 2).map((item) => (
-          <div key={item.name}>
-            <div className={template === "minimal" ? "h-6" : "aspect-[3/4]"} style={{ background: item.tone, borderRadius: template === "vivid" ? 12 : 0 }} />
-            {template !== "minimal" && <p className="mt-1 truncate text-[10px]">{item.name}</p>}
-          </div>
-        ))}
+    <div className="aspect-[4/5] overflow-hidden rounded-xl" style={{ background: dark ? "#100f0e" : "#f6f3ee", color: dark ? "#f4f0e8" : "#14120f" }}>
+      <div className="relative h-[72%]">
+        <img src={lead?.image} alt="" className="h-full w-full object-cover" />
+        {dark && <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />}
+        <p className={`absolute top-3 left-3 text-[10px] tracking-[0.16em] uppercase ${dark ? "text-white" : "rounded-full bg-white/85 px-2 py-1 text-[#14120f]"}`}>{shop}</p>
       </div>
-      <div className="mt-3 h-6" style={{ background: color, width: "40%" }} />
+      <div className="flex items-end justify-between gap-3 px-3 py-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm">{lead?.name}</p>
+          <p className="text-[11px] opacity-60">{ru.templates[template].name}</p>
+        </div>
+        <span className="h-2.5 w-8 shrink-0" style={{ background: color }} />
+      </div>
     </div>
   )
 }

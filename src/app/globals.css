@@ -143,11 +143,16 @@
 }
 
 .sf-sheet {
-  height: min(92dvh, 880px) !important;
-  max-height: 92dvh !important;
+  height: auto !important;
+  max-height: min(92dvh, 880px) !important;
   background: var(--sf-bg) !important;
   color: var(--sf-ink) !important;
   border-color: color-mix(in srgb, var(--sf-ink) 12%, transparent) !important;
+  border-radius: 28px 28px 0 0 !important;
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+.sf-sheet-fill {
+  height: min(92dvh, 880px) !important;
 }
 
 .sf-scroll {

@@ -20,10 +20,12 @@ export function Storefront({
   bundle,
   template,
   accent,
+  embedded = false,
 }: {
   bundle: StoreBundle
   template?: TemplateId
   accent?: string
+  embedded?: boolean
 }) {
   const reduce = useReducedMotion()
   const activeTemplate = template ?? bundle.store.template
@@ -126,7 +128,7 @@ export function Storefront({
   }
 
   return (
-    <div data-template={activeTemplate} className="min-h-dvh pb-28" style={vars}>
+    <div data-template={activeTemplate} className={embedded ? "relative min-h-full pb-24" : "min-h-dvh pb-28"} style={vars}>
       <Catalog
         template={activeTemplate}
         bundle={bundle}
@@ -151,7 +153,7 @@ export function Storefront({
       />
 
       {count > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className={embedded ? "absolute inset-x-0 bottom-0 z-30 px-4 pb-4" : "fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"}>
           <motion.button
             type="button"
             onClick={() => {
@@ -176,7 +178,7 @@ export function Storefront({
       )}
 
       <Sheet open={Boolean(product)} onOpenChange={(open) => !open && setProduct(null)}>
-        <SheetContent side="bottom" showCloseButton className="sf-sheet overflow-y-auto" style={vars}>
+        <SheetContent side="bottom" showCloseButton className="sf-sheet sf-sheet-fill overflow-y-auto" style={vars}>
           {product && (
             <>
               <SheetHeader className="sr-only">

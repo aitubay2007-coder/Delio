@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import QRCode from "qrcode"
+import { ClipboardList, LayoutDashboard, Menu, Package, Palette } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,11 +32,11 @@ type Props = {
 }
 
 const NAV = [
-  ["overview", ru.cabinet.overview],
-  ["orders", ru.cabinet.orders],
-  ["products", ru.cabinet.products],
-  ["branding", ru.cabinet.branding],
-  ["more", ru.cabinet.more],
+  ["overview", ru.cabinet.overview, LayoutDashboard],
+  ["orders", ru.cabinet.orders, ClipboardList],
+  ["products", ru.cabinet.products, Package],
+  ["branding", ru.cabinet.branding, Palette],
+  ["more", ru.cabinet.more, Menu],
 ] as const
 
 export function CabinetApp(props: Props) {
@@ -87,27 +88,28 @@ export function CabinetApp(props: Props) {
   }
 
   return (
-    <div className="min-h-dvh bg-[#f3efe8] pb-24 md:pb-8">
-      <div className="mx-auto grid max-w-6xl md:grid-cols-[220px_1fr]">
-        <aside className="hidden border-r border-[#1c1915]/10 px-4 py-6 md:block">
-          <Link href="/" className="font-serif text-xl">{ru.brand}</Link>
-          {props.email && <p className="mt-2 truncate text-xs text-[#6b645c]">{props.email}</p>}
+    <div className="min-h-dvh bg-[#f4f1eb] pb-28 md:pb-10">
+      <div className="mx-auto grid max-w-6xl md:grid-cols-[232px_1fr]">
+        <aside className="hidden border-r border-[#14120f]/8 px-4 py-8 md:block">
+          <Link href="/" className="font-serif text-2xl tracking-tight">{ru.brand}</Link>
+          {props.email && <p className="mt-2 truncate text-xs text-[#6f675e]">{props.email}</p>}
           <nav className="mt-8 grid gap-1 text-sm">
             {NAV.map(([id, label]) => (
-              <Link key={id} href={href(id)} className={`px-3 py-2 ${section === id ? "bg-[#1c1915] text-[#f6f3ee]" : ""}`}>{label}</Link>
+              <Link key={id} href={href(id)} className={`rounded-xl px-3 py-2.5 ${section === id ? "bg-[#14120f] text-[#f6f3ee]" : "hover:bg-[#14120f]/5"}`}>{label}</Link>
             ))}
-            <Link href={href("settings")} className={`px-3 py-2 ${section === "settings" ? "bg-[#1c1915] text-[#f6f3ee]" : ""}`}>{ru.cabinet.settings}</Link>
-            <Link href={href("stats")} className={`px-3 py-2 ${section === "stats" ? "bg-[#1c1915] text-[#f6f3ee]" : ""}`}>{ru.cabinet.stats}</Link>
+            <Link href={href("settings")} className={`rounded-xl px-3 py-2.5 ${section === "settings" ? "bg-[#14120f] text-[#f6f3ee]" : "hover:bg-[#14120f]/5"}`}>{ru.cabinet.settings}</Link>
+            <Link href={href("stats")} className={`rounded-xl px-3 py-2.5 ${section === "stats" ? "bg-[#14120f] text-[#f6f3ee]" : "hover:bg-[#14120f]/5"}`}>{ru.cabinet.stats}</Link>
           </nav>
         </aside>
-        <div className="px-4 py-5 md:px-8">
+        <div className="px-4 py-6 md:px-10">
           {props.mode === "preview" && <p className="mb-4 border border-dashed border-[#1c1915]/30 px-3 py-2 text-sm">{ru.cabinet.previewBanner}</p>}
-          <header className="flex items-start justify-between gap-3">
+          <header className="flex flex-col gap-4 border-b border-[#14120f]/8 pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="font-serif text-3xl">{store.name}</h1>
-              <p className="mt-1 text-sm text-[#6b645c]">{statusLine(store)}</p>
+              <p className="text-[11px] tracking-[0.16em] uppercase text-[#6f675e]">{ru.brand}</p>
+              <h1 className="mt-1 font-serif text-[2rem] leading-none tracking-tight">{store.name}</h1>
+              <p className="mt-2 text-sm text-[#6f675e]">{statusLine(store)}</p>
             </div>
-            <Link href={`/s/${store.slug}`} className="text-sm underline underline-offset-4">{ru.cabinet.openStore}</Link>
+            <Link href={`/s/${store.slug}`} className="inline-flex h-11 items-center justify-center rounded-full border border-[#14120f]/15 px-4 text-sm">{ru.cabinet.openStore}</Link>
           </header>
           {note && <p className="mt-3 text-sm text-[#3e4c3a]">{note}</p>}
           <div className="mt-6">
@@ -136,9 +138,12 @@ export function CabinetApp(props: Props) {
           </div>
         </div>
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-[#1c1915]/10 bg-[#faf8f5] text-center text-[11px] md:hidden">
-        {NAV.map(([id, label]) => (
-          <Link key={id} href={href(id)} className={`px-1 py-3 ${section === id ? "text-[#1c1915]" : "text-[#8a8175]"}`}>{label}</Link>
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[#14120f]/10 bg-[#fffcf8]/95 pb-[env(safe-area-inset-bottom)] text-center backdrop-blur md:hidden">
+        {NAV.map(([id, label, Icon]) => (
+          <Link key={id} href={href(id)} className={`flex flex-col items-center gap-1 px-1 py-2.5 text-[10px] ${section === id ? "text-[#14120f]" : "text-[#8a8175]"}`}>
+            <Icon className="size-4" strokeWidth={section === id ? 2.25 : 1.75} />
+            {label}
+          </Link>
         ))}
       </nav>
     </div>
@@ -167,14 +172,14 @@ function Overview({ store, orders }: { store: Store; orders: ShopOrder[] }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {!storeAcceptsOrders(store) && <p className="md:col-span-2 text-sm leading-6">{ru.cabinet.trialEnded}</p>}
-      <section className="border border-[#1c1915]/10 bg-[#faf8f5] p-4">
+      <section className="rounded-2xl border border-[#14120f]/8 bg-[#fffcf8] p-5 shadow-[0_10px_30px_rgba(20,18,15,0.04)]">
         <h2 className="text-sm tracking-[0.14em] uppercase text-[#6b645c]">{ru.share.title}</h2>
         <p className="mt-3 break-all text-sm">{link}</p>
         <Button type="button" variant="outline" className="mt-3 h-10" onClick={() => { void navigator.clipboard.writeText(link); setCopied(true) }}>
           {copied ? ru.share.copied : ru.share.copy}
         </Button>
       </section>
-      <section className="border border-[#1c1915]/10 bg-[#faf8f5] p-4">
+      <section className="rounded-2xl border border-[#14120f]/8 bg-[#fffcf8] p-5 shadow-[0_10px_30px_rgba(20,18,15,0.04)]">
         <h2 className="text-sm tracking-[0.14em] uppercase text-[#6b645c]">{ru.share.qr}</h2>
         {qr && <img src={qr} alt={ru.share.qr} className="mt-3 h-40 w-40" />}
       </section>
@@ -200,7 +205,7 @@ function Orders({ orders, mode, onChange }: { orders: ShopOrder[]; mode: "live" 
     <div className="space-y-3">
       <p className="text-sm text-[#6b645c]">{ru.orders.honest}</p>
       {orders.map((order) => (
-        <article key={order.id} className="border border-[#1c1915]/10 bg-[#faf8f5] p-4">
+        <article key={order.id} className="rounded-2xl border border-[#14120f]/8 bg-[#fffcf8] p-4 shadow-[0_10px_30px_rgba(20,18,15,0.04)]">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm">№{order.order_number}</p>
@@ -330,7 +335,7 @@ function Products({
       <div>
         <h2 className="text-sm tracking-[0.14em] uppercase text-[#6b645c]">{ru.products.categories}</h2>
         <div className="mt-2 flex gap-2">
-          <Input value={categoryName} onChange={(event) => setCategoryName(event.target.value)} placeholder={ru.products.addCategory} className="h-11" />
+          <Input value={categoryName} onChange={(event) => setCategoryName(event.target.value)} placeholder={ru.products.name} className="h-12 rounded-xl" />
           <Button type="button" className="h-11" onClick={() => void addCategory()}>{ru.products.addCategory}</Button>
         </div>
         <p className="mt-2 text-sm text-[#6b645c]">{categories.map((item) => item.name).join(" · ")}</p>
@@ -339,15 +344,17 @@ function Products({
       {products.length === 0 && <p className="text-sm leading-6">{ru.products.empty}</p>}
       <ul className="space-y-2">
         {[...products].sort((a, b) => a.sort_order - b.sort_order).map((product) => (
-          <li key={product.id} className="flex items-center gap-3 border border-[#1c1915]/10 bg-[#faf8f5] p-3">
-            <img src={mediaUrl(product.photos[0]?.storage_path) ?? ""} alt="" className="h-14 w-12 object-cover" />
+          <li key={product.id} className="flex items-center gap-3 rounded-2xl border border-[#14120f]/8 bg-[#fffcf8] p-3">
+            <img src={mediaUrl(product.photos[0]?.storage_path) ?? ""} alt="" className="h-16 w-14 rounded-lg object-cover" />
             <div className="min-w-0 flex-1">
-              <p className="truncate">{product.name}</p>
-              <p className="text-sm text-[#6b645c]">{formatMoney(product.price)}{product.available ? "" : ` · ${ru.products.unavailable}`}</p>
+              <p className="truncate text-[15px]">{product.name}</p>
+              <p className="text-sm text-[#6f675e]">{formatMoney(product.price)}{product.available ? "" : ` · ${ru.products.unavailable}`}</p>
             </div>
-            <button type="button" className="text-sm" onClick={() => void move(product, -1)}>{ru.products.up}</button>
-            <button type="button" className="text-sm" onClick={() => void move(product, 1)}>{ru.products.down}</button>
-            <button type="button" className="text-sm underline" onClick={() => setDraft(product)}>{ru.products.edit}</button>
+            <div className="flex shrink-0 flex-col gap-1">
+              <button type="button" className="h-7 rounded-md border border-[#14120f]/10 px-2 text-xs" onClick={() => void move(product, -1)}>{ru.products.up}</button>
+              <button type="button" className="h-7 rounded-md border border-[#14120f]/10 px-2 text-xs" onClick={() => void move(product, 1)}>{ru.products.down}</button>
+            </div>
+            <button type="button" className="shrink-0 text-sm underline underline-offset-4" onClick={() => setDraft(product)}>{ru.products.edit}</button>
           </li>
         ))}
       </ul>
@@ -489,8 +496,10 @@ function Branding({
         <p className="mt-3 text-sm leading-6 text-[#5f584f]">{ru.branding.any}</p>
         <Button type="button" className="mt-4 h-11" onClick={() => void onSave(draft)}>{ru.cabinet.save}</Button>
       </div>
-      <div className="h-[740px] overflow-auto border border-[#1c1915]/10">
-        <Storefront bundle={{ source: "fixture", store: draft, categories, products, covers }} />
+      <div className="mx-auto h-[760px] w-full max-w-[400px] overflow-hidden rounded-[32px] border border-[#14120f]/10 bg-white shadow-[0_30px_80px_rgba(20,18,15,0.12)]">
+        <div className="h-full overflow-y-auto">
+          <Storefront embedded bundle={{ source: "fixture", store: draft, categories, products, covers }} />
+        </div>
       </div>
     </div>
   )
@@ -709,7 +718,7 @@ function Stats({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-[#1c1915]/10 bg-[#faf8f5] p-3">
+    <div className="rounded-2xl border border-[#14120f]/8 bg-[#fffcf8] p-4">
       <p className="text-xs text-[#6b645c]">{label}</p>
       <p className="mt-1 font-serif text-2xl">{value}</p>
     </div>

@@ -1,5 +1,22 @@
+const DEMO_PHOTO: Record<string, string> = {
+  "/demo/peony.svg": "/demo/peony.jpg",
+  "/demo/peony-alt.svg": "/demo/peony-alt.jpg",
+  "/demo/ranunculus.svg": "/demo/ranunculus.jpg",
+  "/demo/roses.svg": "/demo/roses.jpg",
+  "/demo/dried.svg": "/demo/dried.jpg",
+  "/demo/box.svg": "/demo/box.jpg",
+  "/demo/card.svg": "/demo/card.jpg",
+  "/demo/cover.svg": "/demo/cover.jpg",
+  "/demo/logo.svg": "/demo/logo.jpg",
+}
+
+function preferPhoto(path: string) {
+  return DEMO_PHOTO[path] ?? path
+}
+
 export function mediaUrl(path: string | null | undefined): string | null {
   if (!path) return null
+  path = preferPhoto(path)
   if (
     path.startsWith("/") ||
     path.startsWith("http://") ||

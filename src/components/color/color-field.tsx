@@ -28,25 +28,26 @@ export function ColorField({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {COLOR_SWATCHES.map((swatch) => (
-          <button
-            key={swatch.id}
-            type="button"
-            aria-label={ru.colors[swatch.id]}
-            onClick={() => setHex(swatch.hex)}
-            className="h-9 w-9 border"
-            style={{
-              background: swatch.hex,
-              borderColor: normalizeHex(value) === swatch.hex ? "#1c1915" : "transparent",
-              outline: normalizeHex(value) === swatch.hex ? "1px solid #f3efe8" : undefined,
-              outlineOffset: -3,
-            }}
-          />
-        ))}
+      <div className="flex flex-wrap gap-2.5">
+        {COLOR_SWATCHES.map((swatch) => {
+          const selected = normalizeHex(value) === swatch.hex
+          return (
+            <button
+              key={swatch.id}
+              type="button"
+              aria-label={ru.colors[swatch.id]}
+              onClick={() => setHex(swatch.hex)}
+              className="h-9 w-9 rounded-full"
+              style={{
+                background: swatch.hex,
+                boxShadow: selected ? "0 0 0 2px #f6f4ef, 0 0 0 4px #14120f" : "inset 0 0 0 1px rgba(20,18,15,0.12)",
+              }}
+            />
+          )
+        })}
       </div>
       <div
-        className="relative h-36 w-full cursor-crosshair"
+        className="relative aspect-square w-full max-w-[220px] cursor-crosshair rounded-2xl"
         style={{ background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${hsv.h} 100% 50%))` }}
         onPointerDown={(event) => {
           const move = (point: PointerEvent | ReactPointerEvent<HTMLDivElement>) => {
