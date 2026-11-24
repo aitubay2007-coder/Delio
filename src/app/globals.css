@@ -8,9 +8,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-manrope), "Manrope", sans-serif;
-  --font-serif: var(--font-source-serif), "Source Serif 4", Georgia, serif;
-  --font-literata: var(--font-literata-face), Literata, Georgia, serif;
-  --font-nunito: var(--font-nunito-face), Nunito, sans-serif;
+  --font-serif: var(--font-onest), "Onest", sans-serif;
+  --font-heading: var(--font-onest), "Onest", sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -134,8 +133,15 @@
   }
   html {
     @apply font-sans;
-    background: #f3efe8;
-    color: #1c1915;
+    background:
+      radial-gradient(900px 420px at 100% -10%, rgba(196, 91, 120, 0.09), transparent 55%),
+      radial-gradient(700px 380px at -10% 8%, rgba(47, 107, 79, 0.07), transparent 50%),
+      #f3efe8;
+    color: #14120f;
+  }
+  h1, h2, h3, .font-serif {
+    font-family: var(--font-onest), "Onest", sans-serif;
+    letter-spacing: -0.04em;
   }
   ::selection {
     background: #e4d5c4;
@@ -150,6 +156,30 @@
   border-color: color-mix(in srgb, var(--sf-ink) 12%, transparent) !important;
   border-radius: 28px 28px 0 0 !important;
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 -24px 60px rgba(20, 18, 15, 0.18) !important;
+}
+.pressable {
+  transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), background 180ms var(--ease-out);
+}
+.pressable:hover { transform: translateY(-1px); }
+.pressable:active { transform: translateY(0) scale(0.98); }
+.lift {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 1px 2px rgba(20, 18, 15, 0.04),
+    0 18px 40px rgba(20, 18, 15, 0.06);
+}
+.device {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.35), transparent 18%),
+    linear-gradient(160deg, #3a342e, #12110f 42%, #1c1916);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.18) inset,
+    0 1px 0 rgba(255,255,255,0.25) inset,
+    0 30px 60px rgba(20, 18, 15, 0.22),
+    0 8px 16px rgba(20, 18, 15, 0.12);
 }
 .sf-sheet-fill {
   height: min(92dvh, 880px) !important;

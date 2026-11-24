@@ -21,21 +21,30 @@ export function Storefront({
   template,
   accent,
   embedded = false,
+  demo = false,
 }: {
   bundle: StoreBundle
   template?: TemplateId
   accent?: string
   embedded?: boolean
+  demo?: boolean
 }) {
   const reduce = useReducedMotion()
   const activeTemplate = template ?? bundle.store.template
   const theme = TEMPLATE_THEME[activeTemplate]
   const tokens = deriveAccent(accent ?? bundle.store.accent_color, theme.bg)
   const rawCart = useSyncExternalStore(subscribeCart, () => readCart(bundle.store.slug), () => "[]")
-  const lines = useMemo(() => parseCart(rawCart), [rawCart])
+  const storedLines = useMemo(() => parseCart(rawCart), [rawCart])
+  const [demoLines, setDemoLines] = useState<Line[]>([])
+  const lines = demo ? demoLines : storedLines
   const setLines = (update: (current: Line[]) => Line[]) => {
+    if (demo) {
+      setDemoLines((current) => update(current))
+      return
+    }
     writeCart(bundle.store.slug, update(parseCart(readCart(bundle.store.slug))))
   }
+  const scroller = useRef<HTMLDivElement>(null)
   const [product, setProduct] = useState<Product | null>(null)
   const [cartOpen, setCartOpen] = useState(false)
   const [step, setStep] = useState<Step>("cart")
@@ -75,13 +84,54 @@ export function Storefront({
   const count = detailed.reduce((sum, line) => sum + line.qty, 0)
 
   useEffect(() => {
-    if (bundle.source !== "database") return
+    if (!demo || reduce) return
+    let stop = false
+    const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
+    async function play() {
+      while (!stop) {
+        await wait(500)
+        if (stop) return
+        setDemoLines([])
+        setCartOpen(false)
+        setStep("cart")
+        scroller.current?.scrollTo({ top: 0, behavior: "smooth" })
+        await wait(1000)
+        if (stop) return
+        scroller.current?.scrollTo({ top: 320, behavior: "smooth" })
+        await wait(1200)
+        if (stop) return
+        const first = bundle.products.find((item) => item.available)
+        if (first) {
+          setDemoLines([{ productId: first.id, qty: 1 }])
+          setPulse((value) => value + 1)
+        }
+        await wait(800)
+        if (stop) return
+        setStep("cart")
+        setCartOpen(true)
+        await wait(1200)
+        if (stop) return
+        setStep("form")
+        await wait(3400)
+        if (stop) return
+        setStep("review")
+        await wait(2600)
+      }
+    }
+    void play()
+    return () => {
+      stop = true
+    }
+  }, [demo, reduce, bundle.products])
+
+  useEffect(() => {
+    if (bundle.source !== "database" || demo) return
     const day = todayIso(bundle.store.working_hours.timezone)
     const key = `vitrina-view-${bundle.store.id}-${day}`
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, "1")
     void logEvent(bundle, "store_view", null, null)
-  }, [bundle])
+  }, [bundle, demo])
 
   function add(item: Product) {
     if (!item.available) return
@@ -108,7 +158,14 @@ export function Storefront({
 
   const visible =
     category === "all" ? products : products.filter((item) => item.category_id === category)
-  const day = todayHours(bundle.store.working_hours)
+  const dayLabel = useSyncExternalStore(
+    () => () => {},
+    () => {
+      const day = todayHours(bundle.store.working_hours)
+      return day?.closed ? ru.store.dayOff : day ? `${day.open}–${day.close}` : ""
+    },
+    () => "",
+  )
   const live = storeAcceptsOrders(bundle.store)
 
   if (!live) {
@@ -128,7 +185,13 @@ export function Storefront({
   }
 
   return (
-    <div data-template={activeTemplate} className={embedded ? "relative min-h-full pb-24" : "min-h-dvh pb-28"} style={vars}>
+    <div className={demo ? "relative h-full" : undefined} style={demo ? vars : undefined}>
+    <div
+      ref={demo ? scroller : undefined}
+      data-template={activeTemplate}
+      className={demo ? "h-full overflow-y-auto pb-24" : embedded ? "relative min-h-full pb-24" : "min-h-dvh pb-28"}
+      style={demo ? undefined : vars}
+    >
       <Catalog
         template={activeTemplate}
         bundle={bundle}
@@ -147,13 +210,13 @@ export function Storefront({
         }}
         onAdd={add}
         openNow={openNow}
-        dayLabel={day?.closed ? ru.store.dayOff : day ? `${day.open}–${day.close}` : ""}
+        dayLabel={dayLabel}
         occasion={occasion}
         onOccasion={setOccasion}
       />
 
-      {count > 0 && (
-        <div className={embedded ? "absolute inset-x-0 bottom-0 z-30 px-4 pb-4" : "fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"}>
+      {count > 0 && !demo && (
+        <div className={embedded ? "sticky bottom-0 z-30 px-4 pb-4" : "fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"}>
           <motion.button
             type="button"
             onClick={() => {
@@ -177,6 +240,33 @@ export function Storefront({
         </div>
       )}
 
+      </div>
+      {demo && count > 0 && !cartOpen && (
+        <div className="absolute inset-x-0 bottom-0 z-30 px-3 pb-3">
+          <div className="flex items-center justify-between rounded-full px-4 py-3 text-sm shadow-[0_10px_30px_rgba(20,18,15,0.18)]" style={{ background: "var(--sf-button-bg)", color: "var(--sf-button-text)" }}>
+            <span>{count} · {formatMoney(subtotal)}</span>
+            <span>{ru.store.cart}</span>
+          </div>
+        </div>
+      )}
+      {demo && cartOpen && (
+        <div className="absolute inset-x-0 bottom-0 z-40 max-h-[78%] overflow-y-auto rounded-t-[28px] shadow-[0_-24px_60px_rgba(20,18,15,0.2)]" style={vars}>
+          <Checkout
+            bundle={bundle}
+            lines={detailed}
+            subtotal={subtotal}
+            step={step}
+            setStep={setStep}
+            setQty={setQty}
+            occasion={occasion}
+            onClose={() => setCartOpen(false)}
+            scripted={step === "form" || step === "review"}
+          />
+        </div>
+      )}
+
+      {!demo && (
+      <>
       <Sheet open={Boolean(product)} onOpenChange={(open) => !open && setProduct(null)}>
         <SheetContent side="bottom" showCloseButton className="sf-sheet sf-sheet-fill overflow-y-auto" style={vars}>
           {product && (
@@ -235,6 +325,8 @@ export function Storefront({
           />
         </SheetContent>
       </Sheet>
+      </>
+      )}
     </div>
   )
 }
@@ -283,6 +375,7 @@ function Checkout({
   setQty,
   occasion,
   onClose,
+  scripted = false,
 }: {
   bundle: StoreBundle
   lines: (Line & { product: Product })[]
@@ -292,6 +385,7 @@ function Checkout({
   setQty: (id: string, qty: number) => void
   occasion: string | null
   onClose: () => void
+  scripted?: boolean
 }) {
   const store = bundle.store
   const [fulfillment, setFulfillment] = useState<Fulfillment>(store.delivery_enabled ? "delivery" : "pickup")
@@ -310,6 +404,44 @@ function Checkout({
   const deliveryPrice = fulfillment === "delivery" ? (zone?.price ?? 0) : 0
   const total = subtotal + deliveryPrice
   const belowMin = store.min_order > 0 && subtotal < store.min_order
+
+  useEffect(() => {
+    if (!scripted) return
+    if (step === "review") {
+      const id = window.setTimeout(() => {
+        setName("Алия")
+        setPhone("+77010000001")
+        setAddress("ул. Абая 10")
+        setDate("2026-11-25")
+        setTime("14:00")
+        setNumber("A7K2QM")
+        setExtras((current) => ({ ...current, card_text: "С днём рождения" }))
+      }, 0)
+      return () => window.clearTimeout(id)
+    }
+    if (step !== "form") return
+    let cancelled = false
+    const typeInto = async (setter: (value: string) => void, text: string) => {
+      for (let index = 1; index <= text.length; index += 1) {
+        if (cancelled) return
+        setter(text.slice(0, index))
+        await new Promise((resolve) => window.setTimeout(resolve, 48))
+      }
+    }
+    void (async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 0))
+      if (cancelled) return
+      await typeInto(setName, "Алия")
+      await typeInto(setPhone, "+77010000001")
+      await typeInto(setAddress, "ул. Абая 10")
+      if (cancelled) return
+      setDate("2026-11-25")
+      setTime("14:00")
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [scripted, step])
 
   const message = buildWhatsappMessage({
     shopName: store.name,

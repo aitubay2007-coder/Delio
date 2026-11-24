@@ -172,14 +172,14 @@ function Overview({ store, orders }: { store: Store; orders: ShopOrder[] }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {!storeAcceptsOrders(store) && <p className="md:col-span-2 text-sm leading-6">{ru.cabinet.trialEnded}</p>}
-      <section className="rounded-2xl border border-[#14120f]/8 bg-[#fffcf8] p-5 shadow-[0_10px_30px_rgba(20,18,15,0.04)]">
+      <section className="lift rounded-2xl border border-white/70 bg-[#fffcf8]/90 p-5 backdrop-blur-sm">
         <h2 className="text-sm tracking-[0.14em] uppercase text-[#6b645c]">{ru.share.title}</h2>
         <p className="mt-3 break-all text-sm">{link}</p>
         <Button type="button" variant="outline" className="mt-3 h-10" onClick={() => { void navigator.clipboard.writeText(link); setCopied(true) }}>
           {copied ? ru.share.copied : ru.share.copy}
         </Button>
       </section>
-      <section className="rounded-2xl border border-[#14120f]/8 bg-[#fffcf8] p-5 shadow-[0_10px_30px_rgba(20,18,15,0.04)]">
+      <section className="lift rounded-2xl border border-white/70 bg-[#fffcf8]/90 p-5 backdrop-blur-sm">
         <h2 className="text-sm tracking-[0.14em] uppercase text-[#6b645c]">{ru.share.qr}</h2>
         {qr && <img src={qr} alt={ru.share.qr} className="mt-3 h-40 w-40" />}
       </section>

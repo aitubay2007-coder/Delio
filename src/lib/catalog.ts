@@ -197,10 +197,11 @@ export function parseStore(row: Record<string, unknown>): Store {
   }
 }
 
-export function storeAcceptsOrders(store: Store, now = new Date()): boolean {
+export function storeAcceptsOrders(store: Store, now?: Date): boolean {
   if (store.is_demo || store.subscription_status === "active") return true
+  const current = now ?? new Date()
   if (store.subscription_status === "trialing") {
-    return new Date(store.trial_ends_at).getTime() > now.getTime()
+    return new Date(store.trial_ends_at).getTime() > current.getTime()
   }
   return false
 }

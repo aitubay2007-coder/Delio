@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Literata, Manrope, Nunito, Source_Serif_4 } from "next/font/google"
+import { Manrope, Onest } from "next/font/google"
 import { ru } from "@/i18n/ru"
 import { PwaRegister } from "@/components/pwa-register"
 import "./globals.css"
@@ -10,22 +10,9 @@ const manrope = Manrope({
   display: "swap",
 })
 
-const sourceSerif = Source_Serif_4({
+const onest = Onest({
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
-  variable: "--font-source-serif",
-  display: "swap",
-})
-
-const literata = Literata({
-  subsets: ["latin", "cyrillic", "cyrillic-ext"],
-  variable: "--font-literata-face",
-  display: "swap",
-})
-
-const nunito = Nunito({
-  subsets: ["latin", "cyrillic", "cyrillic-ext"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-nunito-face",
+  variable: "--font-onest",
   display: "swap",
 })
 
@@ -50,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ru"
-      className={`${manrope.variable} ${sourceSerif.variable} ${literata.variable} ${nunito.variable} h-full antialiased`}
+      className={`${manrope.variable} ${onest.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-[#f3efe8] text-[#1c1915]">
         <a

@@ -1,11 +1,10 @@
 "use client"
 
-import { useMemo, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
-import { motion, useReducedMotion } from "framer-motion"
+import { motion, useInView, useReducedMotion } from "framer-motion"
 import { defaultHours, defaultOrderForm, defaultZones } from "@/lib/catalog"
 import { EXAMPLE_SHOPS } from "@/lib/examples"
-import { formatMoney } from "@/lib/format"
 import { ru } from "@/i18n/ru"
 import { Storefront } from "@/components/storefront/storefront"
 import type { NicheId, StoreBundle, TemplateId } from "@/lib/types"
@@ -29,10 +28,11 @@ export function Landing() {
   const [menu, setMenu] = useState(false)
   const shop = name.trim() || EXAMPLE_SHOPS[niche].fallbackName
   const products = EXAMPLE_SHOPS[niche].products
+  const demoBundle = useMemo(() => previewBundle(shop, niche, "boutique"), [shop, niche])
 
   return (
     <div className="bg-[#f3efe8] text-[#1c1915]">
-      <header className="sticky top-0 z-40 border-b border-[#14120f]/8 bg-[#f6f4ef]/85 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-white/40 bg-[#f6f4ef]/70 shadow-[0_10px_40px_rgba(20,18,15,0.05)] backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <Link href="/" className="font-serif text-xl tracking-tight" aria-label={ru.a11y.logo}>
             {ru.brand}
@@ -99,7 +99,9 @@ export function Landing() {
             ))}
           </div>
         </div>
-        <Phone shop={shop} products={products} />
+        <DeviceFrame>
+          <Storefront demo embedded bundle={demoBundle} template="boutique" accent="#9A4D55" />
+        </DeviceFrame>
       </section>
 
       <section id="templates" className="mx-auto max-w-6xl px-5 py-20">
@@ -150,15 +152,18 @@ export function Landing() {
         <p className="mt-3 max-w-xl text-sm leading-6 text-[#5f584f]">{ru.landing.sampleNote}</p>
         <div className="mt-6 grid gap-3 sm:grid-cols-4">
           {[
-            [ru.landing.visits, "128"],
-            [ru.landing.sources, "4"],
-            [ru.landing.toWhatsapp, "19"],
-            [ru.landing.conversion, "15%"],
-          ].map(([label, value]) => (
-            <div key={label} className="border border-[#1c1915]/10 bg-[#faf8f5] p-4">
+            [ru.landing.visits, 128, ""],
+            [ru.landing.sources, 4, ""],
+            [ru.landing.toWhatsapp, 19, ""],
+            [ru.landing.conversion, 15, "%"],
+          ].map(([label, value, suffix]) => (
+            <div key={String(label)} className="lift rounded-2xl border border-[#14120f]/8 bg-[#fffcf8] p-4">
               <p className="text-xs text-[#6b645c]">{label}</p>
-              <p className="mt-2 font-serif text-3xl">{value}</p>
-              <p className="mt-2 text-[11px] uppercase tracking-wide text-[#8a8175]">{ru.landing.sample}</p>
+              <p className="mt-2 text-3xl tracking-[-0.04em]">
+                <CountUp value={Number(value)} />
+                {suffix}
+              </p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[#8a8175]">{ru.landing.sample}</p>
             </div>
           ))}
         </div>
@@ -281,44 +286,12 @@ function previewBundle(name: string, niche: NicheId, template: TemplateId): Stor
   }
 }
 
-function Phone({ shop, products }: { shop: string; products: { name: string; price: number; tone: string; image: string }[] }) {
-  const lines = useMemo(
-    () => products.slice(0, 2).map((item) => `${item.name} × 1 — ${formatMoney(item.price)}`).join("\n"),
-    [products],
-  )
-  const hero = products[0]
+function DeviceFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="mx-auto w-[300px] rounded-[2.4rem] border border-[#14120f]/15 bg-[#14120f] p-2 shadow-[0_40px_80px_rgba(20,18,15,0.18)]">
-      <div className="relative h-[600px] overflow-hidden rounded-[1.9rem] bg-[#f7f4ef]">
-        <div className="phone-loop grid h-full">
-          <div className="flex h-full flex-col">
-            <img src={hero?.image} alt="" className="h-[340px] w-full object-cover" />
-            <div className="flex flex-1 flex-col px-4 py-4">
-              <p className="text-[11px] tracking-[0.16em] uppercase text-[#6b675f]">{shop}</p>
-              <ul className="mt-3 space-y-3">
-                {products.slice(0, 2).map((item) => (
-                  <li key={item.name} className="flex items-center gap-3 text-sm">
-                    <img src={item.image} alt="" className="h-11 w-11 rounded-md object-cover" />
-                    <span className="min-w-0 flex-1 truncate">{item.name}</span>
-                    <span className="shrink-0 text-[#5c564e]">{formatMoney(item.price)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div className="flex h-full flex-col bg-[#f7f4ef] p-5">
-            <p className="text-center text-sm tracking-wide">{shop}</p>
-            <img src={hero?.image} alt="" className="mt-4 h-48 w-full rounded-xl object-cover" />
-            <div className="mt-auto rounded-full bg-[#14120f] py-3 text-center text-sm text-[#f6f3ee]">{ru.store.send}</div>
-          </div>
-          <div className="flex h-full items-end bg-[#efeae3] p-4">
-            <div className="w-full rounded-[22px] bg-[#e7f6df] p-4 text-[13px] leading-6 whitespace-pre-wrap text-[#17301c] shadow-[0_10px_30px_rgba(20,18,15,0.06)]">
-              <p className="mb-2 text-[11px] tracking-wide text-[#3d6b4a]">{shop}</p>
-              {lines}
-              {"\n\n"}Итого: {formatMoney(products.slice(0, 2).reduce((sum, item) => sum + item.price, 0))}
-            </div>
-          </div>
-        </div>
+    <div className="device relative mx-auto w-[320px] rounded-[46px] p-[11px]">
+      <div className="pointer-events-none absolute top-3 left-1/2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-black/80" />
+      <div className="pointer-events-none relative h-[640px] overflow-hidden rounded-[36px] bg-[#f7f4ef] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]">
+        {children}
       </div>
     </div>
   )
@@ -390,6 +363,26 @@ function StepColumn({ title, steps }: { title: string; steps: readonly string[] 
       </ol>
     </div>
   )
+}
+
+function CountUp({ value }: { value: number }) {
+  const reduce = useReducedMotion()
+  const ref = useRef<HTMLSpanElement>(null)
+  const inView = useInView(ref, { once: true, margin: "-40px" })
+  const [current, setCurrent] = useState(reduce ? value : 0)
+  useEffect(() => {
+    if (!inView || reduce) return
+    const started = performance.now()
+    let frame = 0
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - started) / 900)
+      setCurrent(Math.round(value * (1 - (1 - progress) ** 3)))
+      if (progress < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [inView, reduce, value])
+  return <span ref={ref}>{current}</span>
 }
 
 function Reveal({ children }: { children: ReactNode }) {
