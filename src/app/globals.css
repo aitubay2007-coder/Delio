@@ -146,6 +146,15 @@
   ::selection {
     background: #e4d5c4;
   }
+  a:focus-visible,
+  button:focus-visible,
+  summary:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid #9a4d55;
+    outline-offset: 3px;
+  }
 }
 
 .sf-sheet {
@@ -169,6 +178,13 @@
 }
 .pressable:hover { transform: translateY(-1px); }
 .pressable:active { transform: translateY(0) scale(0.98); }
+.rise {
+  animation: rise 0.6s var(--ease-out) both;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
 .lift {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.8) inset,
@@ -233,4 +249,5 @@
   }
   .phone-loop > * { opacity: 0 !important; animation: none !important; }
   .phone-loop > :last-child { opacity: 1 !important; }
+  .rise { animation: none; }
 }

@@ -164,7 +164,7 @@ function Boutique(props: Parameters<typeof Catalog>[0]) {
       <Header bundle={props.bundle} openNow={props.openNow} dayLabel={props.dayLabel} align="center" />
       <Categories bundle={props.bundle} category={props.category} onCategory={props.onCategory} />
       {props.bundle.covers[0] && (
-        <Frame path={props.bundle.covers[0].storage_path} alt="" className="mb-8 aspect-[16/7] w-full rounded-2xl" />
+        <Frame path={props.bundle.covers[0].storage_path} alt="" priority className="mb-8 aspect-[16/7] w-full rounded-2xl" />
       )}
       <div className="grid gap-10 sm:grid-cols-2">
         {props.products.map((product) => (

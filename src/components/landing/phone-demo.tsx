@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useReducedMotion } from "framer-motion"
+import Image from "next/image"
+import { useReducedMotion } from "@/lib/motion"
 import { formatMoney } from "@/lib/format"
 import type { ExampleProduct } from "@/lib/examples"
 
@@ -97,7 +98,7 @@ export function PhoneDemo({ shop, products }: { shop: string; products: ExampleP
           >
             {extra.map((item) => (
               <div key={item.name} className="flex items-center gap-3 rounded-2xl bg-white p-2 shadow-[0_8px_24px_rgba(20,18,15,0.05)]">
-                <img src={item.image} alt="" className="h-[72px] w-[64px] rounded-xl object-cover" />
+                <Image src={item.image} alt="" width={128} height={144} className="h-[72px] w-[64px] rounded-xl object-cover" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px]">{item.name}</p>
                   <p className="text-[14px] text-[#9A4D55]">{formatMoney(item.price)}</p>
@@ -117,7 +118,7 @@ export function PhoneDemo({ shop, products }: { shop: string; products: ExampleP
             <div className="absolute inset-x-0 bottom-0 z-20 rounded-t-[28px] bg-[#fffcf8] px-4 pt-4 pb-5 shadow-[0_-24px_50px_rgba(20,18,15,0.18)]">
               <p className="text-[16px]">{phase === "cart" ? "Корзина" : "Оформление"}</p>
               <div className="mt-3 flex items-center gap-3">
-                <img src={first.image} alt="" className="h-14 w-14 rounded-xl object-cover" />
+                <Image src={first.image} alt="" width={112} height={112} className="h-14 w-14 rounded-xl object-cover" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px]">{first.name}</p>
                   <p className="text-[14px] text-[#5c564e]">{formatMoney(first.price)}</p>

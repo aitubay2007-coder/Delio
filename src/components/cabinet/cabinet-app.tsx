@@ -109,7 +109,7 @@ export function CabinetApp(props: Props) {
               <h1 className="mt-1 font-serif text-4xl leading-none tracking-tight">{store.name}</h1>
               <p className="mt-2 text-base text-[#5c564e]">{statusLine(store)}</p>
             </div>
-            <Link href={`/s/${store.slug}`} className="inline-flex h-11 items-center justify-center rounded-full border border-[#14120f]/15 px-4 text-sm">{ru.cabinet.openStore}</Link>
+            <Link href={`/s/${store.slug}`} className="inline-flex h-11 items-center justify-center rounded-full bg-[#14120f] px-4 text-sm text-[#f6f3ee]">{ru.cabinet.openStore}</Link>
           </header>
           {note && <p className="mt-3 text-sm text-[#3e4c3a]">{note}</p>}
           <div className="mt-6">

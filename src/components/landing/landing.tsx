@@ -1,15 +1,20 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
+import Image from "next/image"
 import Link from "next/link"
-import { motion, useReducedMotion } from "framer-motion"
+import dynamic from "next/dynamic"
+import { useReducedMotion } from "@/lib/motion"
 import { defaultHours, defaultOrderForm, defaultZones } from "@/lib/catalog"
 import { EXAMPLE_SHOPS } from "@/lib/examples"
 import { ru } from "@/i18n/ru"
 import { PhoneDemo } from "@/components/landing/phone-demo"
-import { Storefront } from "@/components/storefront/storefront"
 import type { NicheId, StoreBundle, TemplateId } from "@/lib/types"
 import { TEMPLATES } from "@/lib/types"
+
+const Storefront = dynamic(() => import("@/components/storefront/storefront").then((mod) => mod.Storefront), {
+  loading: () => <p className="p-8 text-base">Открываем пример…</p>,
+})
 
 const NICHE_ORDER: NicheId[] = ["flowers", "bakery", "gifts", "clothing", "cosmetics", "coffee_food", "services"]
 
@@ -45,12 +50,12 @@ export function Landing() {
           </nav>
           <div className="hidden items-center gap-3 md:flex">
             <Link href="/login" className="text-sm">{ru.nav.login}</Link>
-            <Link href="/signup" className="inline-flex h-10 items-center bg-[#1c1915] px-4 text-sm text-[#f6f3ee]">{ru.nav.create}</Link>
+            <Link href="/signup" className="inline-flex h-10 items-center rounded-full bg-[#1c1915] px-4 text-sm text-[#f6f3ee]">{ru.nav.create}</Link>
           </div>
-          <button type="button" className="text-sm md:hidden" onClick={() => setMenu((value) => !value)}>{menu ? ru.nav.close : ru.nav.menu}</button>
+          <button type="button" className="text-sm md:hidden" aria-expanded={menu} aria-controls="mobile-nav" onClick={() => setMenu((value) => !value)}>{menu ? ru.nav.close : ru.nav.menu}</button>
         </div>
         {menu && (
-          <div className="grid gap-3 border-t border-[#1c1915]/10 px-5 py-4 text-sm md:hidden">
+          <div id="mobile-nav" className="grid gap-3 border-t border-[#1c1915]/10 px-5 py-4 text-sm md:hidden">
             <a href="#templates" onClick={() => setMenu(false)}>{ru.nav.templates}</a>
             <a href="#how" onClick={() => setMenu(false)}>{ru.nav.how}</a>
             <a href="#stats" onClick={() => setMenu(false)}>{ru.nav.stats}</a>
@@ -61,36 +66,48 @@ export function Landing() {
         )}
       </header>
 
-      <section className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-16 lg:py-20">
+      <section className="mx-auto grid max-w-6xl items-center gap-8 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-16 lg:py-16">
         <div>
           <h1 className="max-w-xl font-serif text-[2.4rem] leading-[1.05] tracking-[-0.035em] sm:text-5xl lg:text-[3.25rem]">
             {ru.hero.title}
           </h1>
-          <p className="mt-6 max-w-lg text-base leading-7 text-[#5f584f]">{ru.hero.subtitle}</p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link href="/signup" className="inline-flex h-12 items-center justify-center bg-[#1c1915] px-6 text-sm text-[#f6f3ee]">{ru.hero.cta}</Link>
-            <Link href="/s/primer" className="inline-flex h-12 items-center justify-center border border-[#1c1915]/20 px-6 text-sm">{ru.hero.example}</Link>
+          <p className="mt-5 max-w-lg text-base leading-7 text-[#5f584f]">{ru.hero.subtitle}</p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link href="/signup" className="inline-flex h-12 items-center justify-center rounded-full bg-[#1c1915] px-6 text-sm text-[#f6f3ee]">{ru.hero.cta}</Link>
+            <Link href="/s/primer" className="inline-flex h-12 items-center justify-center rounded-full border border-[#1c1915]/20 px-6 text-sm">{ru.hero.example}</Link>
           </div>
-          <p className="mt-3 max-w-md text-sm leading-6 text-[#6b645c]">{ru.hero.ctaNext}</p>
-          <p className="mt-1 max-w-md text-sm leading-6 text-[#6b645c]">{ru.hero.trial}</p>
-          <label className="mt-10 block max-w-md">
-            <span className="text-sm">{ru.hero.tryOn}</span>
-            <span className="mt-1 block text-xs leading-5 text-[#6f675e]">{ru.hero.tryOnHint}</span>
+          <ul className="mt-5 flex flex-wrap gap-2">
+            {ru.landing.promises.map((item) => (
+              <li key={item} className="rounded-full bg-white px-3 py-1.5 text-sm text-[#3f3a34] shadow-[0_1px_0_rgba(255,255,255,0.8)]">{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="mx-auto w-full max-w-[390px]">
+          <PhoneDemo shop={shop} products={products} />
+        </div>
+      </section>
+
+      <section id="try" className="mx-auto max-w-6xl px-5 pb-4">
+        <div className="rounded-3xl bg-white p-5 shadow-[0_18px_50px_rgba(20,18,15,0.05)] sm:p-6">
+          <label className="block max-w-md">
+            <span className="text-base">{ru.hero.tryOn}</span>
+            <span className="mt-1 block text-sm leading-6 text-[#5c564e]">{ru.hero.tryOnHint}</span>
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder={ru.hero.placeholder}
-              className="mt-2 h-12 w-full border border-[#1c1915]/15 bg-[#faf8f5] px-4 outline-none focus:border-[#1c1915]"
+              className="mt-3 h-12 w-full rounded-2xl border border-[#1c1915]/15 bg-[#faf8f5] px-4"
             />
           </label>
-          <p className="mt-6 text-xs text-[#6f675e]">{ru.hero.nicheHint}</p>
+          <p className="mt-5 text-sm text-[#5c564e]">{ru.hero.nicheHint}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {NICHE_ORDER.map((id) => (
               <button
                 key={id}
                 type="button"
+                aria-pressed={niche === id}
                 onClick={() => setNiche(id)}
-                className="shrink-0 border px-3 py-1.5 text-sm"
+                className="shrink-0 rounded-full border px-3 py-1.5 text-sm"
                 style={{
                   borderColor: niche === id ? "#1c1915" : "rgba(28,25,21,0.15)",
                   background: niche === id ? "#1c1915" : "transparent",
@@ -101,17 +118,26 @@ export function Landing() {
               </button>
             ))}
           </div>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-[#5c564e]">{ru.hero.ctaNext} {ru.hero.trial}</p>
         </div>
-        <PhoneDemo shop={shop} products={products} />
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 pb-8">
+      <section className="mx-auto max-w-6xl px-5 py-16">
         <h2 className="font-serif text-3xl tracking-[-0.04em]">{ru.landing.bentoTitle}</h2>
-        <div className="mt-6 grid gap-3 md:grid-cols-3">
-          {ru.landing.bento.map((item) => (
-            <article key={item.title} className="lift rounded-2xl border border-white/80 bg-[#fffcf8] p-5">
-              <h3 className="text-lg tracking-[-0.03em]">{item.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-[#5c564e]">{item.text}</p>
+        <div className="mt-6 grid gap-3 md:grid-cols-6">
+          <article className="overflow-hidden rounded-3xl bg-white shadow-[0_18px_50px_rgba(20,18,15,0.05)] md:col-span-3 md:row-span-2">
+            <div className="relative h-52">
+              <Image src="/demo/peony.jpg" alt="Букет пионов, пример товара" fill sizes="(max-width: 768px) 100vw, 480px" className="object-cover" />
+            </div>
+            <div className="p-6">
+              <h3 className="text-2xl tracking-[-0.03em]">{ru.landing.bento[0].title}</h3>
+              <p className="mt-2 text-base leading-7 text-[#5c564e]">{ru.landing.bento[0].text}</p>
+            </div>
+          </article>
+          {ru.landing.bento.slice(1).map((item) => (
+            <article key={item.title} className="rounded-3xl bg-white p-6 shadow-[0_18px_50px_rgba(20,18,15,0.05)] md:col-span-3">
+              <h3 className="text-2xl tracking-[-0.03em]">{item.title}</h3>
+              <p className="mt-2 text-base leading-7 text-[#5c564e]">{item.text}</p>
             </article>
           ))}
         </div>
@@ -197,7 +223,7 @@ export function Landing() {
           </ul>
           <p className="mt-6 text-lg">{ru.landing.priceFree}</p>
           <p className="text-sm text-[#6b645c]">{ru.landing.priceAfter}</p>
-          <Link href="/signup" className="mt-6 inline-flex h-12 w-full items-center justify-center bg-[#1c1915] text-sm text-[#f6f3ee]">{ru.landing.priceCta}</Link>
+          <Link href="/signup" className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-full bg-[#1c1915] text-sm text-[#f6f3ee]">{ru.landing.priceCta}</Link>
           <p className="mt-4 text-sm leading-6 text-[#5f584f]">{ru.landing.pricePay}</p>
           <p className="mt-4 text-sm text-[#6b645c]">
             {ru.landing.domain} — {ru.landing.soon}. {ru.landing.video} — {ru.landing.soon}.
@@ -221,7 +247,7 @@ export function Landing() {
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <h2 className="max-w-xl font-serif text-4xl leading-tight">{ru.landing.finalTitle}</h2>
           <div>
-            <Link href="/signup" className="inline-flex h-12 items-center bg-[#f6f3ee] px-6 text-sm text-[#1c1915]">{ru.landing.finalCta}</Link>
+            <Link href="/signup" className="inline-flex h-12 items-center rounded-full bg-[#f6f3ee] px-6 text-sm text-[#1c1915]">{ru.landing.finalCta}</Link>
             <p className="mt-3 text-sm text-[#d9d0c5]">{ru.hero.trial}</p>
           </div>
         </div>
@@ -362,15 +388,5 @@ function StepColumn({ title, steps }: { title: string; steps: readonly string[] 
 
 function Reveal({ children }: { children: ReactNode }) {
   const reduce = useReducedMotion()
-  if (reduce) return <div>{children}</div>
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
-  )
+  return <div className={reduce ? undefined : "rise"}>{children}</div>
 }

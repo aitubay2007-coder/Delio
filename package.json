@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check": "node --experimental-strip-types scripts/check-contrast.ts"
+    "check": "node --experimental-strip-types scripts/check-contrast.ts",
+    "test:e2e": "playwright test",
+    "perf": "node scripts/perf-budget.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -26,13 +28,16 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "chrome-launcher": "^1.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "lighthouse": "^13.6.0",
     "tailwindcss": "4.3.3",
     "typescript": "^5"
   }
