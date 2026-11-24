@@ -142,7 +142,7 @@ function Minimal(props: Parameters<typeof Catalog>[0]) {
       <Categories bundle={props.bundle} category={props.category} onCategory={props.onCategory} />
       <ul className="space-y-3">
         {props.products.map((product) => (
-          <li key={product.id} className="flex items-center gap-4 rounded-2xl border bg-white/70 p-3" style={{ borderColor: "var(--sf-line)" }}>
+          <li key={product.id} className="card-hover flex items-center gap-4 rounded-2xl border bg-white/70 p-3" style={{ borderColor: "var(--sf-line)" }}>
             <button type="button" onClick={() => props.onOpen(product)} className="h-24 w-20 shrink-0 overflow-hidden rounded-xl">
               <Frame path={product.photos[0]?.storage_path} alt={product.name} className="h-24 w-20" />
             </button>
@@ -168,7 +168,7 @@ function Boutique(props: Parameters<typeof Catalog>[0]) {
       )}
       <div className="grid gap-10 sm:grid-cols-2">
         {props.products.map((product) => (
-          <article key={product.id}>
+          <article key={product.id} className="card-hover">
             <button type="button" onClick={() => props.onOpen(product)} className="block w-full text-left">
               <Frame path={product.photos[0]?.storage_path} alt={product.name} className="aspect-[5/4] w-full sm:aspect-[4/5]" />
               <h2 className="mt-4 text-[1.65rem] leading-none tracking-[-0.03em]">{product.name}</h2>
@@ -217,7 +217,7 @@ function ByDate(props: Parameters<typeof Catalog>[0]) {
       </section>
       <div className={shown.length > 1 ? "mt-8 grid gap-6 sm:grid-cols-2" : "mt-8 grid max-w-xl gap-6"}>
         {shown.map(({ product, occasion }) => (
-          <article key={product.id} className="overflow-hidden rounded-3xl border bg-white" style={{ borderColor: "var(--sf-line)" }}>
+          <article key={product.id} className="card-hover overflow-hidden rounded-3xl border bg-white" style={{ borderColor: "var(--sf-line)" }}>
             <button type="button" onClick={() => props.onOpen(product)} className="block w-full text-left">
               <Frame path={product.photos[0]?.storage_path} alt={product.name} className="aspect-[4/3] w-full" />
               <div className="p-4">
@@ -293,7 +293,7 @@ function Vivid(props: Parameters<typeof Catalog>[0]) {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {props.products.map((product) => (
-            <article key={product.id} className="rounded-[28px] bg-white p-3 text-[#14120f]">
+            <article key={product.id} className="card-hover rounded-[28px] bg-white p-3 text-[#14120f]">
               <button type="button" onClick={() => props.onOpen(product)} className="block w-full text-left">
                 <Frame path={product.photos[0]?.storage_path} alt={product.name} className="aspect-[5/4] w-full rounded-[20px]" />
                 <h2 className="mt-3 px-1 text-3xl leading-none">{product.name}</h2>

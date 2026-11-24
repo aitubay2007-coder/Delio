@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import dynamic from "next/dynamic"
@@ -8,7 +8,7 @@ import { useReducedMotion } from "@/lib/motion"
 import { defaultHours, defaultOrderForm, defaultZones } from "@/lib/catalog"
 import { EXAMPLE_SHOPS } from "@/lib/examples"
 import { ru } from "@/i18n/ru"
-import { PhoneDemo } from "@/components/landing/phone-demo"
+import { PhoneDemo, type PhonePhase } from "@/components/landing/phone-demo"
 import type { NicheId, StoreBundle, TemplateId } from "@/lib/types"
 import { TEMPLATES } from "@/lib/types"
 
@@ -32,6 +32,7 @@ export function Landing() {
   const [name, setName] = useState("")
   const [open, setOpen] = useState<TemplateId | null>(null)
   const [menu, setMenu] = useState(false)
+  const [phase, setPhase] = useState<PhonePhase>("browse")
   const shop = name.trim() || EXAMPLE_SHOPS[niche].fallbackName
   const products = EXAMPLE_SHOPS[niche].products
 
@@ -50,7 +51,7 @@ export function Landing() {
           </nav>
           <div className="hidden items-center gap-3 md:flex">
             <Link href="/login" className="text-sm">{ru.nav.login}</Link>
-            <Link href="/signup" className="inline-flex h-10 items-center rounded-full bg-[#1c1915] px-4 text-sm text-[#f6f3ee]">{ru.nav.create}</Link>
+            <Link href="/signup" className="btn btn-dark h-10 px-4 text-sm">{ru.nav.create}</Link>
           </div>
           <button type="button" className="text-sm md:hidden" aria-expanded={menu} aria-controls="mobile-nav" onClick={() => setMenu((value) => !value)}>{menu ? ru.nav.close : ru.nav.menu}</button>
         </div>
@@ -61,29 +62,33 @@ export function Landing() {
             <a href="#stats" onClick={() => setMenu(false)}>{ru.nav.stats}</a>
             <a href="#pricing" onClick={() => setMenu(false)}>{ru.nav.pricing}</a>
             <Link href="/login">{ru.nav.login}</Link>
-            <Link href="/signup" className="inline-flex h-11 items-center justify-center bg-[#1c1915] text-[#f6f3ee]">{ru.nav.create}</Link>
+            <Link href="/signup" className="btn btn-dark">{ru.nav.create}</Link>
           </div>
         )}
       </header>
 
-      <section className="mx-auto grid max-w-6xl items-center gap-8 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-16 lg:py-16">
-        <div>
-          <h1 className="max-w-xl font-serif text-[2.4rem] leading-[1.05] tracking-[-0.035em] sm:text-5xl lg:text-[3.25rem]">
-            {ru.hero.title}
-          </h1>
-          <p className="mt-5 max-w-lg text-base leading-7 text-[#5f584f]">{ru.hero.subtitle}</p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link href="/signup" className="inline-flex h-12 items-center justify-center rounded-full bg-[#1c1915] px-6 text-sm text-[#f6f3ee]">{ru.hero.cta}</Link>
-            <Link href="/s/primer" className="inline-flex h-12 items-center justify-center rounded-full border border-[#1c1915]/20 px-6 text-sm">{ru.hero.example}</Link>
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(720px_420px_at_88%_12%,rgba(154,77,85,0.18),transparent_58%),radial-gradient(640px_380px_at_0%_90%,rgba(228,211,196,0.85),transparent_60%)]" />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_460px] lg:py-20">
+          <div>
+            <p className="text-sm tracking-[0.18em] text-[#9A4D55] uppercase">Ссылка вместо переписки</p>
+            <h1 className="mt-4 max-w-xl font-serif text-[2.55rem] leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-[4.25rem]">
+              {ru.hero.title}
+            </h1>
+            <p className="mt-6 max-w-lg text-[17px] leading-8 text-[#4e4840]">{ru.hero.subtitle}</p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link href="/signup" className="btn btn-dark">{ru.hero.cta}</Link>
+              <Link href="/s/primer" className="btn btn-line">{ru.hero.example}</Link>
+            </div>
+            <ul className="mt-6 flex flex-wrap gap-2">
+              {ru.landing.promises.map((item) => (
+                <li key={item} className="rounded-full border border-white/80 bg-white/80 px-3 py-1.5 text-sm text-[#3f3a34] shadow-[0_8px_24px_rgba(20,18,15,0.04)]">{item}</li>
+              ))}
+            </ul>
           </div>
-          <ul className="mt-5 flex flex-wrap gap-2">
-            {ru.landing.promises.map((item) => (
-              <li key={item} className="rounded-full bg-white px-3 py-1.5 text-sm text-[#3f3a34] shadow-[0_1px_0_rgba(255,255,255,0.8)]">{item}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="mx-auto w-full max-w-[390px]">
-          <PhoneDemo shop={shop} products={products} />
+          <div className="relative z-10 mx-auto w-full max-w-[390px]">
+            <PhoneDemo shop={shop} products={products} onPhase={setPhase} />
+          </div>
         </div>
       </section>
 
@@ -122,24 +127,35 @@ export function Landing() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-16">
-        <h2 className="font-serif text-3xl tracking-[-0.04em]">{ru.landing.bentoTitle}</h2>
-        <div className="mt-6 grid gap-3 md:grid-cols-6">
-          <article className="overflow-hidden rounded-3xl bg-white shadow-[0_18px_50px_rgba(20,18,15,0.05)] md:col-span-3 md:row-span-2">
-            <div className="relative h-52">
-              <Image src="/demo/peony.jpg" alt="Букет пионов, пример товара" fill sizes="(max-width: 768px) 100vw, 480px" className="object-cover" />
-            </div>
-            <div className="p-6">
-              <h3 className="text-2xl tracking-[-0.03em]">{ru.landing.bento[0].title}</h3>
-              <p className="mt-2 text-base leading-7 text-[#5c564e]">{ru.landing.bento[0].text}</p>
-            </div>
-          </article>
-          {ru.landing.bento.slice(1).map((item) => (
-            <article key={item.title} className="rounded-3xl bg-white p-6 shadow-[0_18px_50px_rgba(20,18,15,0.05)] md:col-span-3">
-              <h3 className="text-2xl tracking-[-0.03em]">{item.title}</h3>
-              <p className="mt-2 text-base leading-7 text-[#5c564e]">{item.text}</p>
+      <section className="bg-white/70 py-20">
+        <div className="mx-auto max-w-6xl px-5">
+          <Reveal>
+            <h2 className="max-w-xl font-serif text-4xl tracking-[-0.045em]">{ru.landing.bentoTitle}</h2>
+          </Reveal>
+          <div className="mt-8 grid gap-4 lg:grid-cols-12">
+            <article className="card-hover relative min-h-[420px] overflow-hidden rounded-[28px] lg:col-span-7">
+              <Image src="/demo/peony.jpg" alt="Букет пионов, пример товара" fill sizes="(max-width: 1024px) 100vw, 640px" className="object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-7 text-white">
+                <h3 className="text-3xl tracking-[-0.04em]">{ru.landing.bento[0].title}</h3>
+                <p className="mt-2 max-w-md text-base leading-7 text-white/90">{ru.landing.bento[0].text}</p>
+              </div>
             </article>
-          ))}
+            <div className="grid gap-4 lg:col-span-5">
+              <article className="card-hover rounded-[28px] bg-[#f6f1ea] p-7">
+                <h3 className="text-2xl tracking-[-0.04em]">{ru.landing.bento[1].title}</h3>
+                <p className="mt-3 text-base leading-7 text-[#4e4840]">{ru.landing.bento[1].text}</p>
+              </article>
+              <article className="card-hover relative min-h-[210px] overflow-hidden rounded-[28px]">
+                <Image src="/demo/ranunculus.jpg" alt="Букет ранункулюсов, пример товара" fill sizes="480px" className="object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-6 text-white">
+                  <h3 className="text-2xl tracking-[-0.04em]">{ru.landing.bento[2].title}</h3>
+                  <p className="mt-2 text-base leading-7 text-white/90">{ru.landing.bento[2].text}</p>
+                </div>
+              </article>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -154,7 +170,7 @@ export function Landing() {
               key={id}
               type="button"
               onClick={() => setOpen(id)}
-              className="w-[82%] shrink-0 snap-center rounded-2xl border border-[#14120f]/10 bg-[#fffcf8] p-3 text-left shadow-[0_18px_50px_rgba(20,18,15,0.05)] transition-transform duration-300 hover:-translate-y-0.5 md:w-auto"
+              className="card-hover w-[82%] shrink-0 snap-center rounded-[28px] border border-[#14120f]/8 bg-[#fffcf8] p-3 text-left shadow-[0_18px_50px_rgba(20,18,15,0.05)] md:w-auto"
             >
               <Miniature template={id} shop={shop} products={products} color={TEMPLATE_COLORS[id]} />
               <h3 className="mt-4 text-lg">{ru.templates[id].name}</h3>
@@ -178,14 +194,26 @@ export function Landing() {
       </div>
       </section>
 
-      <section id="how" className="mx-auto max-w-6xl px-5 py-16">
-        <h2 className="font-serif text-4xl">{ru.landing.howTitle}</h2>
-        <p className="mt-3 max-w-xl text-sm leading-6 text-[#5c564e]">{ru.landing.howText}</p>
-        <div className="mt-8 grid gap-10 md:grid-cols-2">
-          <StepColumn title={ru.landing.owner} steps={ru.landing.ownerSteps} />
-          <StepColumn title={ru.landing.shopper} steps={ru.landing.shopperSteps} />
+      <section id="how" className="bg-[#efe8df] py-20">
+        <div className="mx-auto grid max-w-6xl items-start gap-10 px-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+          <div>
+            <h2 className="font-serif text-4xl tracking-[-0.045em]">{ru.landing.howTitle}</h2>
+            <p className="mt-3 max-w-xl text-base leading-7 text-[#4e4840]">{ru.landing.howText}</p>
+            <ol className="mt-8 space-y-3">
+              {ru.landing.shopperSteps.map((step, index) => {
+                const active = shopperStep(phase) === index
+                return (
+                  <li key={step} className={`grid grid-cols-[2.5rem_1fr] items-center gap-3 rounded-2xl px-3 py-3 text-base transition-all duration-500 ${active ? "bg-white shadow-[0_12px_30px_rgba(20,18,15,0.08)]" : ""}`}>
+                    <span className={`grid h-9 w-9 place-items-center rounded-full text-sm ${active ? "bg-[#14120f] text-white" : "bg-white/70 text-[#6b645c]"}`}>0{index + 1}</span>
+                    <span>{step}</span>
+                  </li>
+                )
+              })}
+            </ol>
+            <p className="mt-6 max-w-xl text-sm leading-6 text-[#5c564e]">{ru.landing.confirmHint}</p>
+          </div>
+          <OrderDesk arrived={phase === "switch" || phase === "chat"} />
         </div>
-        <p className="mt-8 max-w-xl text-sm leading-6 text-[#5f584f]">{ru.landing.confirmHint}</p>
       </section>
 
       <section id="stats" className="mx-auto max-w-6xl px-5 py-8">
@@ -223,7 +251,7 @@ export function Landing() {
           </ul>
           <p className="mt-6 text-lg">{ru.landing.priceFree}</p>
           <p className="text-sm text-[#6b645c]">{ru.landing.priceAfter}</p>
-          <Link href="/signup" className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-full bg-[#1c1915] text-sm text-[#f6f3ee]">{ru.landing.priceCta}</Link>
+          <Link href="/signup" className="btn btn-dark mt-6 w-full">{ru.landing.priceCta}</Link>
           <p className="mt-4 text-sm leading-6 text-[#5f584f]">{ru.landing.pricePay}</p>
           <p className="mt-4 text-sm text-[#6b645c]">
             {ru.landing.domain} — {ru.landing.soon}. {ru.landing.video} — {ru.landing.soon}.
@@ -247,14 +275,14 @@ export function Landing() {
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <h2 className="max-w-xl font-serif text-4xl leading-tight">{ru.landing.finalTitle}</h2>
           <div>
-            <Link href="/signup" className="inline-flex h-12 items-center rounded-full bg-[#f6f3ee] px-6 text-sm text-[#1c1915]">{ru.landing.finalCta}</Link>
+            <Link href="/signup" className="btn btn-light">{ru.landing.finalCta}</Link>
             <p className="mt-3 text-sm text-[#d9d0c5]">{ru.hero.trial}</p>
           </div>
         </div>
       </section>
 
       {open && (
-        <div className="fixed inset-0 z-50 overflow-auto bg-[#f3efe8]" role="dialog" aria-modal="true" aria-label={ru.templates[open].name}>
+        <div className="dialog-in fixed inset-0 z-50 overflow-auto bg-[#f3efe8]" role="dialog" aria-modal="true" aria-label={ru.templates[open].name}>
           <button type="button" onClick={() => setOpen(null)} className="fixed top-4 right-4 z-[80] rounded-full bg-white px-4 py-2 text-base text-[#14120f] shadow-lg">
             {ru.nav.close}
           </button>
@@ -370,23 +398,51 @@ function Compare({ title, messy, shop, product }: { title: string; messy?: boole
   )
 }
 
-function StepColumn({ title, steps }: { title: string; steps: readonly string[] }) {
+function shopperStep(phase: PhonePhase) {
+  if (phase === "add" || phase === "cart") return 1
+  if (phase === "form") return 2
+  if (phase === "confirm" || phase === "switch" || phase === "chat") return 3
+  return 0
+}
+
+function OrderDesk({ arrived }: { arrived: boolean }) {
   return (
-    <div>
-      <h3 className="text-sm tracking-[0.16em] uppercase text-[#6b645c]">{title}</h3>
-      <ol className="mt-4 space-y-4">
-        {steps.map((step, index) => (
-          <li key={step} className="grid grid-cols-[2rem_1fr] gap-3 text-sm leading-6">
-            <span className="text-[#8a8175]">0{index + 1}</span>
-            <span>{step}</span>
-          </li>
-        ))}
-      </ol>
+    <div className="rounded-[28px] bg-white p-6 shadow-[0_24px_60px_rgba(20,18,15,0.08)]">
+      <p className="text-xs tracking-[0.16em] text-[#6b645c] uppercase">Кабинет · пример</p>
+      <h3 className="mt-2 text-2xl tracking-[-0.04em]">Цветочная лавка</h3>
+      <p className="mt-1 text-sm text-[#5c564e]">Не живой заказ. Строка появляется вместе с чатом в телефоне.</p>
+      <ul className="mt-5 divide-y divide-[#14120f]/8">
+        <li className="flex items-center justify-between py-3 text-base">
+          <span>Данияр · Красные розы</span>
+          <span className="text-sm text-[#5c564e]">подтверждён</span>
+        </li>
+        <li className={`flex items-center justify-between gap-3 py-3 text-base transition-all duration-700 ${arrived ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}>
+          <span>
+            <span className="mr-2 rounded-full bg-[#9A4D55] px-2 py-0.5 text-xs text-white">новый</span>
+            Алия · Пионовый сад
+          </span>
+          <span>30 000 ₸</span>
+        </li>
+      </ul>
     </div>
   )
 }
 
 function Reveal({ children }: { children: ReactNode }) {
   const reduce = useReducedMotion()
-  return <div className={reduce ? undefined : "rise"}>{children}</div>
+  const ref = useRef<HTMLDivElement>(null)
+  const [shown, setShown] = useState(reduce)
+  useEffect(() => {
+    if (reduce) return
+    const node = ref.current
+    if (!node) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry?.isIntersecting) return
+      setShown(true)
+      observer.disconnect()
+    }, { rootMargin: "0px 0px -10% 0px" })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [reduce])
+  return <div ref={ref} className={shown ? "rise-in" : "rise-wait"}>{children}</div>
 }

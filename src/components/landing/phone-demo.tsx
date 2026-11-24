@@ -6,29 +6,43 @@ import { useReducedMotion } from "@/lib/motion"
 import { formatMoney } from "@/lib/format"
 import type { ExampleProduct } from "@/lib/examples"
 
-type Phase = "browse" | "scroll" | "add" | "cart" | "form" | "confirm" | "switch" | "chat"
+export type PhonePhase = "browse" | "scroll" | "add" | "cart" | "form" | "confirm" | "switch" | "chat"
 
-const ORDER: Phase[] = ["browse", "scroll", "add", "cart", "form", "confirm", "switch", "chat"]
-const MS: Record<Phase, number> = {
-  browse: 3000,
-  scroll: 2800,
-  add: 2800,
-  cart: 3200,
-  form: 3400,
-  confirm: 2800,
-  switch: 2800,
-  chat: 3400,
+const ORDER: PhonePhase[] = ["browse", "scroll", "add", "cart", "form", "confirm", "switch", "chat"]
+const MS: Record<PhonePhase, number> = {
+  browse: 2800,
+  scroll: 2600,
+  add: 2400,
+  cart: 2800,
+  form: 4200,
+  confirm: 2200,
+  switch: 1600,
+  chat: 3600,
 }
 
-export function PhoneDemo({ shop, products }: { shop: string; products: ExampleProduct[] }) {
+export function PhoneDemo({
+  shop,
+  products,
+  onPhase,
+}: {
+  shop: string
+  products: ExampleProduct[]
+  onPhase?: (phase: PhonePhase) => void
+}) {
   const reduce = useReducedMotion()
-  const [phase, setPhase] = useState<Phase>(reduce ? "chat" : "browse")
-  const [typed, setTyped] = useState("")
+  const [phase, setPhase] = useState<PhonePhase>(reduce ? "chat" : "browse")
+  const [name, setName] = useState("")
+  const [address, setAddress] = useState("")
+  const [caret, setCaret] = useState<"name" | "address" | null>(null)
   const catalog = (products.length ? products : [{ name: "Пионовый сад", price: 28000, tone: "", image: "/demo/peony.jpg" }]).slice(0, 4)
   const extra = catalog.length < 4
     ? [...catalog, { name: "Сухоцветы", price: 14000, tone: "", image: "/demo/dried.jpg" }].slice(0, 4)
     : catalog
   const first = extra[0]
+
+  useEffect(() => {
+    onPhase?.(phase)
+  }, [onPhase, phase])
 
   useEffect(() => {
     if (reduce) return
@@ -37,20 +51,35 @@ export function PhoneDemo({ shop, products }: { shop: string; products: ExampleP
     const sleep = (ms: number) => new Promise((resolve) => {
       timer = window.setTimeout(resolve, ms)
     })
+    async function typeInto(setter: (value: string) => void, text: string, field: "name" | "address") {
+      setCaret(field)
+      let built = ""
+      for (const char of text) {
+        if (stop) return
+        built += char
+        setter(built)
+        await sleep(char === " " ? 160 : 45 + (built.length % 3) * 18)
+      }
+    }
     async function loop() {
-      const address = "ул. Абая 10"
       while (!stop) {
         for (const step of ORDER) {
           if (stop) return
           setPhase(step)
+          if (step === "browse") {
+            setName("")
+            setAddress("")
+            setCaret(null)
+          }
           if (step === "form") {
-            setTyped("")
-            for (let i = 1; i <= address.length; i += 1) {
-              if (stop) return
-              setTyped(address.slice(0, i))
-              await sleep(90)
-            }
-            await sleep(Math.max(400, MS.form - address.length * 90))
+            setName("")
+            setAddress("")
+            await typeInto(setName, "Алия", "name")
+            if (stop) return
+            await sleep(220)
+            await typeInto(setAddress, "ул. Абая 10", "address")
+            setCaret(null)
+            await sleep(700)
           } else {
             await sleep(MS[step])
           }
@@ -66,7 +95,10 @@ export function PhoneDemo({ shop, products }: { shop: string; products: ExampleP
 
   const onChat = phase === "switch" || phase === "chat" || reduce
   const sheet = phase === "cart" || phase === "form" || phase === "confirm"
+  const scrolled = phase !== "browse"
   const message = `Заказ №A7K2QM\n${first.name} × 1 — ${formatMoney(first.price)}\nАдрес: ул. Абая 10\nИтого: ${formatMoney(first.price + 2000)}`
+  const shownName = reduce ? "Алия" : name
+  const shownAddress = reduce ? "ул. Абая 10" : address
 
   return (
     <div className="device relative mx-auto w-full max-w-[390px] rounded-[2.7rem] p-[11px]">
@@ -75,15 +107,13 @@ export function PhoneDemo({ shop, products }: { shop: string; products: ExampleP
           <div className="absolute top-1.5 left-1/2 h-6 w-[108px] -translate-x-1/2 rounded-full bg-black" />
           <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-6 pb-1 text-[13px] font-semibold">
             <span>9:41</span>
-            <span className="flex items-center gap-1">
-              <span className="h-[9px] w-[14px] rounded-[2px] border border-current" />
-            </span>
+            <span className="h-[9px] w-[14px] rounded-[2px] border border-current" />
           </div>
         </div>
 
         <div
-          className="absolute inset-0 bg-[#f6f3ee] pt-[62px] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-          style={{ transform: onChat ? "translateX(-100%)" : "translateX(0)" }}
+          className="absolute inset-0 bg-[#f6f3ee] pt-[62px] transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ transform: onChat ? "translateX(-104%)" : "translateX(0)" }}
         >
           <div className="flex items-center gap-3 px-4 pt-2">
             <span className="grid h-11 w-11 place-items-center rounded-full bg-[#9A4D55] text-base text-white">{shop.slice(0, 1)}</span>
@@ -93,56 +123,64 @@ export function PhoneDemo({ shop, products }: { shop: string; products: ExampleP
             </div>
           </div>
           <div
-            className="mt-3 space-y-3 px-4 transition-transform duration-700"
-            style={{ transform: phase === "browse" ? "translateY(0)" : "translateY(-28px)" }}
+            className="mt-3 space-y-3 px-4 transition-transform duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            style={{ transform: scrolled ? "translateY(-92px)" : "translateY(0)" }}
           >
-            {extra.map((item) => (
+            {extra.map((item, index) => (
               <div key={item.name} className="flex items-center gap-3 rounded-2xl bg-white p-2 shadow-[0_8px_24px_rgba(20,18,15,0.05)]">
                 <Image src={item.image} alt="" width={128} height={144} className="h-[72px] w-[64px] rounded-xl object-cover" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px]">{item.name}</p>
                   <p className="text-[14px] text-[#9A4D55]">{formatMoney(item.price)}</p>
                 </div>
-                <span className="rounded-full bg-[#9A4D55] px-3 py-2 text-[13px] text-white">В корзину</span>
+                <span className={`rounded-full px-3 py-2 text-[13px] text-white ${phase === "add" && index === 0 ? "scale-95 bg-[#7d3c46]" : "bg-[#9A4D55]"}`}>В корзину</span>
               </div>
             ))}
           </div>
           {phase === "add" && (
-            <div className="absolute inset-x-4 bottom-4 flex items-center justify-between rounded-full bg-[#9A4D55] px-4 py-3 text-[15px] text-white shadow-lg">
+            <div className="bubble-in absolute inset-x-4 bottom-4 flex items-center justify-between rounded-full bg-[#9A4D55] px-4 py-3 text-[15px] text-white shadow-lg">
               <span>1 · {formatMoney(first.price)}</span>
               <span>Корзина</span>
             </div>
           )}
           {phase === "add" && <Tap left="84%" top="31%" />}
-          {sheet && (
-            <div className="absolute inset-x-0 bottom-0 z-20 rounded-t-[28px] bg-[#fffcf8] px-4 pt-4 pb-5 shadow-[0_-24px_50px_rgba(20,18,15,0.18)]">
-              <p className="text-[16px]">{phase === "cart" ? "Корзина" : "Оформление"}</p>
-              <div className="mt-3 flex items-center gap-3">
-                <Image src={first.image} alt="" width={112} height={112} className="h-14 w-14 rounded-xl object-cover" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px]">{first.name}</p>
-                  <p className="text-[14px] text-[#5c564e]">{formatMoney(first.price)}</p>
-                </div>
-                <span className="text-[15px]">1</span>
+          <div
+            className="absolute inset-x-0 bottom-0 z-20 rounded-t-[28px] bg-[#fffcf8] px-4 pt-4 pb-5 shadow-[0_-24px_50px_rgba(20,18,15,0.18)] transition-transform duration-[720ms] ease-[cubic-bezier(0.22,1.25,0.36,1)]"
+            style={{ transform: sheet ? "translateY(0)" : "translateY(108%)" }}
+            aria-hidden={!sheet}
+          >
+            <p className="text-[16px]">{phase === "cart" ? "Корзина" : "Оформление"}</p>
+            <div className="mt-3 flex items-center gap-3">
+              <Image src={first.image} alt="" width={112} height={112} className="h-14 w-14 rounded-xl object-cover" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px]">{first.name}</p>
+                <p className="text-[14px] text-[#5c564e]">{formatMoney(first.price)}</p>
               </div>
-              {phase !== "cart" && (
-                <div className="mt-3 space-y-2 text-[15px]">
-                  <p className="rounded-xl border border-[#14120f]/15 px-3 py-2">Алия</p>
-                  <p className="rounded-xl border border-[#14120f]/15 px-3 py-2">{typed || "Адрес"}</p>
-                  <p className="inline-flex rounded-full bg-[#9A4D55] px-3 py-1.5 text-[13px] text-white">Завтра 25.11 · 14:00</p>
-                </div>
-              )}
-              <div className={`mt-3 rounded-full py-3 text-center text-[15px] text-white ${phase === "confirm" ? "bg-[#7d3c46]" : "bg-[#9A4D55]"}`}>
-                {phase === "cart" ? "Оформить" : "Отправить в WhatsApp"}
-              </div>
+              <span className="text-[15px]">1</span>
             </div>
-          )}
-          {phase === "confirm" && <Tap left="50%" top="88%" />}
+            {phase !== "cart" && (
+              <div className="mt-3 space-y-2 text-[15px]">
+                <p className="rounded-xl border border-[#14120f]/15 px-3 py-2">
+                  {shownName || "Имя"}
+                  {caret === "name" && <span className="caret" />}
+                </p>
+                <p className="rounded-xl border border-[#14120f]/15 px-3 py-2">
+                  {shownAddress || "Адрес"}
+                  {caret === "address" && <span className="caret" />}
+                </p>
+                <p className="inline-flex rounded-full bg-[#9A4D55] px-3 py-1.5 text-[13px] text-white">Завтра 25.11 · 14:00</p>
+              </div>
+            )}
+            <div className={`mt-3 rounded-full py-3 text-center text-[15px] text-white ${phase === "confirm" ? "scale-[0.98] bg-[#7d3c46]" : "bg-[#9A4D55]"}`}>
+              {phase === "cart" ? "Оформить" : "Отправить в WhatsApp"}
+            </div>
+          </div>
+          {phase === "confirm" && <Tap left="50%" top="86%" />}
         </div>
 
         <div
-          className="absolute inset-0 bg-[#efeae2] pt-[62px] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-          style={{ transform: onChat ? "translateX(0)" : "translateX(100%)" }}
+          className="absolute inset-0 bg-[#efeae2] pt-[62px] transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ transform: onChat ? "translateX(0)" : "translateX(104%)" }}
         >
           <div className="flex items-center gap-3 bg-[#075E54] px-4 py-3 text-white">
             <span className="grid h-10 w-10 place-items-center rounded-full bg-white/20 text-[16px]">{shop.slice(0, 1)}</span>
@@ -151,18 +189,25 @@ export function PhoneDemo({ shop, products }: { shop: string; products: ExampleP
               <p className="text-[13px] text-white/80">в сети</p>
             </div>
           </div>
-          <div className="space-y-3 bg-[#efe7dc] px-3 py-4" style={{ minHeight: "calc(100% - 118px)" }}>
-            <div className="max-w-[88%] rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-[14px] leading-5 text-[#111b21] shadow-sm">
+          <div
+            className="space-y-3 px-3 py-4"
+            style={{
+              minHeight: "calc(100% - 118px)",
+              backgroundColor: "#efe7dc",
+              backgroundImage: "radial-gradient(circle at 20% 10%, rgba(255,255,255,0.45), transparent 28%)",
+            }}
+          >
+            <div className="bubble-in max-w-[88%] rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-[14px] leading-5 text-[#111b21] shadow-sm">
               Здравствуйте! Это {shop}. Заказ получили, подтвердим время доставки.
               <p className="mt-1 text-right text-[12px] text-[#667781]">9:41</p>
             </div>
             {(phase === "chat" || reduce) && (
               <>
-                <div className="ml-auto max-w-[90%] rounded-2xl rounded-tr-sm bg-[#d9fdd3] px-3 py-2 text-[14px] leading-5 whitespace-pre-wrap text-[#111b21] shadow-sm">
+                <div className="bubble-in ml-auto max-w-[90%] rounded-2xl rounded-tr-sm bg-[#d9fdd3] px-3 py-2 text-[14px] leading-5 whitespace-pre-wrap text-[#111b21] shadow-sm" style={{ animationDelay: "280ms" }}>
                   {message}
                   <p className="mt-1 text-right text-[12px] text-[#667781]">9:41 ✓✓</p>
                 </div>
-                <div className="max-w-[88%] rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-[14px] leading-5 text-[#111b21] shadow-sm">
+                <div className="bubble-in max-w-[88%] rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-[14px] leading-5 text-[#111b21] shadow-sm" style={{ animationDelay: "700ms" }}>
                   Привезём завтра в 14:00. Если адрес верный, ничего больше писать не нужно.
                   <p className="mt-1 text-right text-[12px] text-[#667781]">9:42</p>
                 </div>

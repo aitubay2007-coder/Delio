@@ -194,7 +194,7 @@ function Overview({ store, orders, events, example }: { store: Store; orders: Sh
         <Metric label={ru.orders.total} value={formatMoney(sum)} />
       </div>
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
-        <section className="rounded-3xl border border-[#14120f]/8 bg-white p-5 shadow-[0_16px_40px_rgba(20,18,15,0.05)]">
+        <section className="card-hover rounded-3xl border border-[#14120f]/8 bg-white p-5 shadow-[0_16px_40px_rgba(20,18,15,0.05)]">
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="text-xl">{ru.cabinet.orders}</h2>
             <span className="text-base text-[#5c564e]">{orders.length}</span>
@@ -216,11 +216,11 @@ function Overview({ store, orders, events, example }: { store: Store; orders: Sh
           {!orders.length && <p className="mt-3 text-base text-[#5c564e]">{ru.orders.empty}</p>}
         </section>
         <div className="grid gap-4">
-          <section className="rounded-3xl border border-[#14120f]/8 bg-white p-5 shadow-[0_16px_40px_rgba(20,18,15,0.05)]">
+          <section className="card-hover rounded-3xl border border-[#14120f]/8 bg-white p-5 shadow-[0_16px_40px_rgba(20,18,15,0.05)]">
             <h2 className="text-base text-[#5c564e]">{example ? "Просмотры, пример" : ru.stats.chart}</h2>
             <Sparkline values={series} />
           </section>
-          <section className="rounded-3xl border border-[#14120f]/8 bg-white p-5 shadow-[0_16px_40px_rgba(20,18,15,0.05)]">
+          <section className="card-hover rounded-3xl border border-[#14120f]/8 bg-white p-5 shadow-[0_16px_40px_rgba(20,18,15,0.05)]">
             <h2 className="text-base text-[#5c564e]">{ru.share.title}</h2>
             <p className="mt-2 break-all text-base">{link}</p>
             <Button type="button" variant="outline" className="mt-3 h-11" onClick={() => { void navigator.clipboard.writeText(link); setCopied(true) }}>
@@ -773,8 +773,8 @@ function Stats({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[#14120f]/8 bg-[#fffcf8] p-4">
-      <p className="text-xs text-[#6b645c]">{label}</p>
+    <div className="card-hover rounded-3xl border border-[#14120f]/8 bg-white p-5">
+      <p className="text-sm text-[#5c564e]">{label}</p>
       <p className="mt-1 font-serif text-2xl">{value}</p>
     </div>
   )
