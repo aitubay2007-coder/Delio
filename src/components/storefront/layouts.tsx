@@ -38,23 +38,36 @@ export function Catalog(props: {
   return <Minimal {...props} />
 }
 
+function ShopAvatar({ name, logoPath, onAccent = false }: { name: string; logoPath: string | null; onAccent?: boolean }) {
+  const placeholder = !logoPath || logoPath.includes("/demo/logo.")
+  const logo = placeholder ? null : mediaUrl(logoPath)
+  const letter = name.trim().slice(0, 1).toUpperCase()
+  if (logo) {
+    return <img src={logo} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover ring-4 ring-white" />
+  }
+  return (
+    <span
+      aria-hidden
+      className="grid h-14 w-14 shrink-0 place-items-center rounded-full text-xl font-medium ring-4 ring-white"
+      style={onAccent
+        ? { background: "#fff", color: "var(--sf-button-bg)" }
+        : { background: "var(--sf-button-bg)", color: "var(--sf-button-text)" }}
+    >
+      {letter}
+    </span>
+  )
+}
+
 function Header({ bundle, openNow, dayLabel, align = "left" }: {
   bundle: StoreBundle
   openNow: boolean | null
   dayLabel: string
   align?: "left" | "center"
 }) {
-  const logo = mediaUrl(bundle.store.logo_path)
   return (
     <header className={`flex flex-col gap-3 py-6 ${align === "center" ? "items-center text-center" : ""}`}>
       <div className={`flex items-center gap-3 ${align === "center" ? "flex-col" : ""}`}>
-        {logo ? (
-          <img src={logo} alt="" className="h-16 w-16 rounded-full bg-[#efe8df] object-cover ring-4 ring-white shadow-sm" />
-        ) : (
-          <span className="grid h-14 w-14 place-items-center rounded-full text-lg" style={{ background: "var(--sf-soft)" }}>
-            {bundle.store.name.slice(0, 1)}
-          </span>
-        )}
+        <ShopAvatar name={bundle.store.name} logoPath={bundle.store.logo_path} />
         <div>
           <p className="text-xs tracking-[0.14em] uppercase" style={{ color: "var(--sf-muted)" }}>
             {ru.niches[bundle.store.niche]}
@@ -255,9 +268,7 @@ function Vivid(props: Parameters<typeof Catalog>[0]) {
     <main className="min-h-dvh pb-28" style={{ background: "var(--sf-button-bg)", color: "var(--sf-button-text)" }}>
       <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
         <header className="flex items-center gap-3 py-4">
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white text-2xl" style={{ color: "var(--sf-button-bg)" }}>
-            {props.bundle.store.name.slice(0, 1)}
-          </span>
+          <ShopAvatar name={props.bundle.store.name} logoPath={props.bundle.store.logo_path} onAccent />
           <div>
             <p className="text-sm uppercase tracking-[0.16em] opacity-80">{ru.niches[props.bundle.store.niche]}</p>
             <h1 className="text-4xl leading-none">{props.bundle.store.name}</h1>
@@ -300,11 +311,10 @@ function Vivid(props: Parameters<typeof Catalog>[0]) {
 }
 
 function Cinematic(props: Parameters<typeof Catalog>[0]) {
-  const logo = mediaUrl(props.bundle.store.logo_path)
   return (
     <main className="mx-auto w-full max-w-5xl pb-28">
       <header className="sticky top-0 z-20 flex items-center gap-3 px-5 py-4" style={{ background: "color-mix(in srgb, var(--sf-bg) 88%, transparent)" }}>
-        {logo && <img src={logo} alt="" className="h-11 w-11 rounded-full bg-[#efe8df] object-cover ring-2 ring-white/40" />}
+        <ShopAvatar name={props.bundle.store.name} logoPath={props.bundle.store.logo_path} />
         <div className="min-w-0">
           <h1 className="truncate text-lg tracking-[0.12em] uppercase">{props.bundle.store.name}</h1>
           <p className="text-sm" style={{ color: "var(--sf-muted)" }}>
