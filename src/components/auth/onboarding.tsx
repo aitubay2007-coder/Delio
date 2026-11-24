@@ -24,7 +24,7 @@ export function Onboarding() {
   const [national, setNational] = useState("")
   const [logo, setLogo] = useState<File | null>(null)
   const [template, setTemplate] = useState<TemplateId>("minimal")
-  const [color, setColor] = useState("#3E4C3A")
+  const [color, setColor] = useState("#B78268")
   const [message, setMessage] = useState("")
   const [pending, setPending] = useState(false)
   const phone = toE164(prefix, national)

@@ -52,7 +52,7 @@ async function StoreBody({ params, searchParams }: Props) {
 
 function StoreSkeleton() {
   return (
-    <div className="min-h-dvh bg-[#f6f5f2] px-5 pt-8">
+    <div className="min-h-dvh bg-[#FAF7F2] px-4 pt-8">
       <div className="skeleton h-4 w-24" />
       <div className="skeleton mt-4 h-8 w-48" />
       <div className="mt-8 grid gap-4">

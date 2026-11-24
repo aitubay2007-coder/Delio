@@ -42,17 +42,20 @@ values (
       "fri": {"closed": false, "open": "10:00", "close": "20:00"},
       "sat": {"closed": false, "open": "11:00", "close": "19:00"},
       "sun": {"closed": true, "open": "11:00", "close": "19:00"}
-    }
+    },
+    "slot_minutes": 120,
+    "horizon_days": 6
   }'::jsonb,
   true,
   true,
   '[
     {"id": "center", "name": "В пределах города", "price": 2000},
-    {"id": "outside", "name": "За городом", "price": 4000}
+    {"id": "outside", "name": "За городом", "price": 4000},
+    {"id": "quote", "name": "По договорённости", "price": 0, "quoted": true}
   ]'::jsonb,
   0,
   'boutique',
-  '#9A4D55',
+  '#B78268',
   '{
     "fields": [
       {"id": "card_text", "key": "card_text", "label": "Текст открытки", "type": "textarea", "required": false},

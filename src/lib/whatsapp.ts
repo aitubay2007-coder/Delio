@@ -7,6 +7,7 @@ export type MessageInput = {
   subtotal: number
   fulfillment: "delivery" | "pickup"
   deliveryPrice: number
+  deliveryQuoted?: boolean
   zoneName?: string | null
   total: number
   customerName: string
@@ -25,8 +26,12 @@ export function buildWhatsappMessage(input: MessageInput): string {
   }
   lines.push("", `Товары: ${formatMoney(input.subtotal)}`)
   if (input.fulfillment === "delivery") {
-    const zone = input.zoneName ? ` (${input.zoneName})` : ""
-    lines.push(`Доставка${zone}: ${formatMoney(input.deliveryPrice)}`)
+    if (input.deliveryQuoted) {
+      lines.push("Доставка: стоимость уточним")
+    } else {
+      const zone = input.zoneName ? ` (${input.zoneName})` : ""
+      lines.push(`Доставка${zone}: ${formatMoney(input.deliveryPrice)}`)
+    }
   } else {
     lines.push("Самовывоз")
   }

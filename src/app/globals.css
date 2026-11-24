@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-manrope), "Manrope", sans-serif;
-  --font-serif: var(--font-onest), "Onest", sans-serif;
-  --font-heading: var(--font-onest), "Onest", sans-serif;
+  --font-sans: var(--font-geist), "Geist", sans-serif;
+  --font-serif: var(--font-geist), "Geist", sans-serif;
+  --font-heading: var(--font-geist), "Geist", sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -52,8 +52,8 @@
 
 :root {
   color-scheme: light;
-  --background: #f3efe8;
-  --foreground: #1c1915;
+  --background: #FAF7F2;
+  --foreground: #292524;
   --card: #faf8f5;
   --card-foreground: #1c1915;
   --popover: #faf8f5;
@@ -134,14 +134,14 @@
   html {
     @apply font-sans;
     background:
-      radial-gradient(900px 420px at 100% -10%, rgba(196, 91, 120, 0.09), transparent 55%),
-      radial-gradient(700px 380px at -10% 8%, rgba(47, 107, 79, 0.07), transparent 50%),
-      #f3efe8;
-    color: #14120f;
+      radial-gradient(900px 420px at 100% -10%, rgba(183, 130, 104, 0.16), transparent 55%),
+      radial-gradient(700px 380px at -10% 8%, rgba(183, 130, 104, 0.08), transparent 50%),
+      #FAF7F2;
+    color: #292524;
   }
   h1, h2, h3, .font-serif {
-    font-family: var(--font-onest), "Onest", sans-serif;
-    letter-spacing: -0.04em;
+    font-family: var(--font-geist), "Geist", sans-serif;
+    letter-spacing: -0.03em;
   }
   ::selection {
     background: #e4d5c4;
@@ -152,7 +152,7 @@
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible {
-    outline: 2px solid #9a4d55;
+    outline: 2px solid #292524;
     outline-offset: 3px;
   }
 }
@@ -167,7 +167,7 @@
   background: var(--sf-bg) !important;
   color: var(--sf-ink) !important;
   border-color: color-mix(in srgb, var(--sf-ink) 12%, transparent) !important;
-  border-radius: 28px 28px 0 0 !important;
+  border-radius: 16px 16px 0 0 !important;
   padding-bottom: 0 !important;
   box-shadow:
     0 -1px 0 rgba(255, 255, 255, 0.4) inset,
@@ -281,6 +281,45 @@
   100% { transform: translate(-50%, -50%) scale(1.7); opacity: 0; }
 }
 
+.sf-rise { animation: sf-rise 300ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes sf-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sf-dock { animation: sf-dock 250ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes sf-dock {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sf-step { animation: sf-step 200ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes sf-step {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sf-ack { animation: sf-ack 180ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes sf-ack {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.sf-msg { animation: sf-msg 200ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes sf-msg {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tap-dot {
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  margin-top: -7px;
+  border-radius: 999px;
+  background: rgba(41, 37, 36, 0.35);
+  animation: tap-dot 420ms ease-out forwards;
+}
+@keyframes tap-dot {
+  from { opacity: 0.45; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.35); }
+}
+
 .skeleton {
   background: linear-gradient(90deg, rgba(28, 25, 21, 0.05), rgba(28, 25, 21, 0.1), rgba(28, 25, 21, 0.05));
   background-size: 200% 100%;
@@ -300,7 +339,8 @@
   }
   .phone-loop > * { opacity: 0 !important; animation: none !important; }
   .phone-loop > :last-child { opacity: 1 !important; }
-  .rise, .dialog-in, .bubble-in, .caret { animation: none; }
+  .rise, .dialog-in, .bubble-in, .caret, .sf-rise, .sf-dock, .sf-step, .sf-ack, .sf-msg, .tap-dot { animation: none; }
+  .sf-rise, .sf-dock, .sf-step, .sf-ack, .sf-msg { opacity: 1; transform: none; }
   .rise-wait { opacity: 1; transform: none; }
   .card-hover:hover, .btn:hover, .pressable:hover { transform: none; }
 }

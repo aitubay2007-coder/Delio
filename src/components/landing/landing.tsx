@@ -68,10 +68,10 @@ export function Landing() {
       </header>
 
       <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(720px_420px_at_88%_12%,rgba(154,77,85,0.18),transparent_58%),radial-gradient(640px_380px_at_0%_90%,rgba(228,211,196,0.85),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(720px_420px_at_88%_12%,rgba(183,130,104,0.22),transparent_58%),radial-gradient(640px_380px_at_0%_90%,rgba(250,247,242,0.9),transparent_60%)]" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_460px] lg:py-20">
           <div>
-            <p className="text-sm tracking-[0.18em] text-[#9A4D55] uppercase">Ссылка вместо переписки</p>
+            <p className="text-[13px] tracking-[0.18em] text-[#292524] uppercase">Ссылка вместо переписки</p>
             <h1 className="mt-4 max-w-xl font-serif text-[2.55rem] leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-[4.25rem]">
               {ru.hero.title}
             </h1>
@@ -88,6 +88,7 @@ export function Landing() {
           </div>
           <div className="relative z-10 mx-auto w-full max-w-[390px]">
             <PhoneDemo shop={shop} products={products} onPhase={setPhase} />
+            <p className="mt-3 text-center text-[13px] text-[#5E5752]">{ru.store.exampleOrder}</p>
           </div>
         </div>
       </section>
@@ -212,7 +213,7 @@ export function Landing() {
             </ol>
             <p className="mt-6 max-w-xl text-sm leading-6 text-[#5c564e]">{ru.landing.confirmHint}</p>
           </div>
-          <OrderDesk arrived={phase === "switch" || phase === "chat"} />
+          <OrderDesk arrived={phase === "sent" || phase === "reply" || phase === "hold"} />
         </div>
       </section>
 
@@ -399,9 +400,9 @@ function Compare({ title, messy, shop, product }: { title: string; messy?: boole
 }
 
 function shopperStep(phase: PhonePhase) {
-  if (phase === "add" || phase === "cart") return 1
+  if (phase === "dock" || phase === "cart") return 1
   if (phase === "form") return 2
-  if (phase === "confirm" || phase === "switch" || phase === "chat") return 3
+  if (phase === "draft" || phase === "sent" || phase === "reply" || phase === "hold") return 3
   return 0
 }
 

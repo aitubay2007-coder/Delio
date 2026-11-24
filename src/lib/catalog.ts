@@ -11,22 +11,30 @@ import type {
 } from "@/lib/types"
 import { DAY_KEYS, NICHES, TEMPLATES } from "@/lib/types"
 
+export const IVORY = "#FAF7F2"
+export const GRAPHITE = "#292524"
+export const COPPER = "#B78268"
+
+const light = { bg: IVORY, ink: GRAPHITE, muted: "#5E5752", radius: "14px" }
+
 export const TEMPLATE_THEME: Record<
   TemplateId,
   { bg: string; ink: string; muted: string; radius: string }
 > = {
-  minimal: { bg: "#F6F5F2", ink: "#1C1915", muted: "#6F6A63", radius: "0px" },
-  boutique: { bg: "#F8F4EF", ink: "#241C16", muted: "#7A6D62", radius: "0px" },
-  by_date: { bg: "#F4F0E8", ink: "#2A241C", muted: "#74695C", radius: "18px" },
-  editorial: { bg: "#F3F1EC", ink: "#161513", muted: "#5E5A54", radius: "0px" },
-  vivid: { bg: "#FFFDF8", ink: "#1B1916", muted: "#5C564E", radius: "28px" },
-  cinematic: { bg: "#100F0E", ink: "#F4F0E8", muted: "#B7AEA2", radius: "2px" },
+  minimal: light,
+  boutique: light,
+  by_date: light,
+  editorial: light,
+  vivid: light,
+  cinematic: { bg: "#100F0E", ink: "#F4F0E8", muted: "#B7AEA2", radius: "14px" },
 }
 
 export function defaultHours(): WorkingHours {
   const open = { closed: false, open: "10:00", close: "20:00" }
   return {
     timezone: "Asia/Almaty",
+    slot_minutes: 120,
+    horizon_days: 6,
     days: {
       mon: { ...open },
       tue: { ...open },
@@ -101,8 +109,10 @@ function isDayKey(value: string): value is DayKey {
 export function parseHours(value: unknown): WorkingHours {
   const fallback = defaultHours()
   if (!value || typeof value !== "object") return fallback
-  const record = value as { timezone?: unknown; days?: unknown }
+  const record = value as { timezone?: unknown; days?: unknown; slot_minutes?: unknown; horizon_days?: unknown }
   const timezone = typeof record.timezone === "string" ? record.timezone : fallback.timezone
+  const slot = Number(record.slot_minutes)
+  const horizon = Number(record.horizon_days)
   const days = { ...fallback.days }
   if (record.days && typeof record.days === "object") {
     for (const key of DAY_KEYS) {
@@ -116,7 +126,12 @@ export function parseHours(value: unknown): WorkingHours {
       }
     }
   }
-  return { timezone, days }
+  return {
+    timezone,
+    days,
+    slot_minutes: slot >= 30 && slot <= 240 ? slot : fallback.slot_minutes,
+    horizon_days: horizon >= 1 && horizon <= 21 ? horizon : fallback.horizon_days,
+  }
 }
 
 export function parseZones(value: unknown): DeliveryZone[] {
@@ -127,7 +142,7 @@ export function parseZones(value: unknown): DeliveryZone[] {
     if (typeof row.id !== "string" || typeof row.name !== "string") return []
     const price = Number(row.price)
     if (!Number.isFinite(price) || price < 0) return []
-    return [{ id: row.id, name: row.name, price }]
+    return [{ id: row.id, name: row.name, price, quoted: row.quoted === true }]
   })
 }
 
@@ -185,7 +200,7 @@ export function parseStore(row: Record<string, unknown>): Store {
     delivery_zones: parseZones(row.delivery_zones),
     min_order: Number(row.min_order ?? 0),
     template,
-    accent_color: String(row.accent_color ?? "#3E4C3A"),
+    accent_color: String(row.accent_color ?? "#B78268"),
     order_form: parseOrderForm(row.order_form),
     trial_ends_at: String(row.trial_ends_at ?? "1970-01-01T00:00:00.000Z"),
     subscription_status: subscription,

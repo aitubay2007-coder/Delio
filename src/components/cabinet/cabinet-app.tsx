@@ -551,10 +551,8 @@ function Branding({
         <p className="mt-3 text-sm leading-6 text-[#5f584f]">{ru.branding.any}</p>
         <Button type="button" className="mt-4 h-11" onClick={() => void onSave(draft)}>{ru.cabinet.save}</Button>
       </div>
-      <div className="mx-auto h-[760px] w-full max-w-[400px] overflow-hidden rounded-[32px] border border-[#14120f]/10 bg-white shadow-[0_30px_80px_rgba(20,18,15,0.12)]">
-        <div className="h-full overflow-y-auto">
-          <Storefront embedded bundle={{ source: "fixture", store: draft, categories, products, covers }} />
-        </div>
+      <div className="relative mx-auto h-[760px] w-full max-w-[400px] overflow-hidden rounded-[32px] border border-[#292524]/10 bg-[#FAF7F2] shadow-[0_30px_80px_rgba(41,37,36,0.12)]">
+        <Storefront embedded bundle={{ source: "fixture", store: draft, categories, products, covers }} />
       </div>
     </div>
   )
@@ -637,6 +635,11 @@ function Settings({
           <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={draft.working_hours.days[day].closed} onChange={(event) => setDraft({ ...draft, working_hours: { ...draft.working_hours, days: { ...draft.working_hours.days, [day]: { ...draft.working_hours.days[day], closed: event.target.checked } } } })} />{ru.settings.closed}</label>
         </div>
       ))}
+      <Label>{ru.settings.slot}</Label>
+      <Input type="number" min={30} max={240} step={30} value={draft.working_hours.slot_minutes} onChange={(event) => setDraft({ ...draft, working_hours: { ...draft.working_hours, slot_minutes: Number(event.target.value) } })} className="h-11" />
+      <Label>{ru.settings.horizon}</Label>
+      <Input type="number" min={1} max={21} value={draft.working_hours.horizon_days} onChange={(event) => setDraft({ ...draft, working_hours: { ...draft.working_hours, horizon_days: Number(event.target.value) } })} className="h-11" />
+      <p className="text-sm leading-6 text-[#5f584f]">{ru.settings.slotHint}</p>
       <h2 className="pt-4 font-serif text-2xl">{ru.settings.delivery}</h2>
       <div className="flex items-center justify-between"><span>{ru.settings.deliveryOn}</span><Switch checked={draft.delivery_enabled} onCheckedChange={(checked) => setDraft({ ...draft, delivery_enabled: checked })} /></div>
       <div className="flex items-center justify-between"><span>{ru.settings.pickupOn}</span><Switch checked={draft.pickup_enabled} onCheckedChange={(checked) => setDraft({ ...draft, pickup_enabled: checked })} /></div>
@@ -653,6 +656,17 @@ function Settings({
             setDraft({ ...draft, delivery_zones: zones })
           }} className="h-11" />
           <Button type="button" variant="outline" className="h-11" onClick={() => setDraft({ ...draft, delivery_zones: draft.delivery_zones.filter((item) => item.id !== zone.id) })}>{ru.settings.remove}</Button>
+          <label className="col-span-full flex h-11 items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={Boolean(zone.quoted)}
+              onChange={(event) => {
+                const zones = draft.delivery_zones.map((item, itemIndex) => itemIndex === index ? { ...item, quoted: event.target.checked } : item)
+                setDraft({ ...draft, delivery_zones: zones })
+              }}
+            />
+            {ru.settings.quoted}
+          </label>
         </div>
       ))}
       <Button type="button" variant="outline" className="h-11" onClick={() => setDraft({ ...draft, delivery_zones: [...draft.delivery_zones, { id: crypto.randomUUID(), name: ru.settings.zoneName, price: 0 }] })}>{ru.settings.addZone}</Button>

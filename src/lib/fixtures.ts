@@ -71,10 +71,11 @@ export function fixtureBundle(): StoreBundle {
       delivery_zones: [
         { id: "center", name: "В пределах города", price: 2000 },
         { id: "outside", name: "За городом", price: 4000 },
+        { id: "quote", name: "По договорённости", price: 0, quoted: true },
       ],
       min_order: 0,
       template: "boutique",
-      accent_color: "#9A4D55",
+      accent_color: "#B78268",
       order_form: {
         fields: [
           { id: "card_text", key: "card_text", label: "Текст открытки", type: "textarea", required: false },
@@ -140,9 +141,9 @@ export function fixtureBundle(): StoreBundle {
       product(
         "33333333-3333-4333-8333-333333333335",
         categories[2].id,
-        "Коробка с цветами",
+        "Коробка с цветами и длинной атласной лентой",
         "Низкая композиция в круглой коробке. Крышка в комплекте.",
-        32000,
+        128000,
         4,
         [photo("44444444-4444-4444-8444-444444444446", "33333333-3333-4333-8333-333333333335", "/demo/box.jpg")],
       ),

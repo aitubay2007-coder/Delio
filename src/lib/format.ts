@@ -10,6 +10,24 @@ const DAY_INDEX: Record<string, DayKey> = {
   Sun: "sun",
 }
 
+export function itemCount(count: number): string {
+  const n = Math.abs(count)
+  const mod10 = n % 10
+  const mod100 = n % 100
+  const word =
+    mod10 === 1 && mod100 !== 11
+      ? "товар"
+      : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+        ? "товара"
+        : "товаров"
+  return `${count} ${word}`
+}
+
+export function cityLine(address: string): string {
+  const city = address.split(",")[0]?.trim()
+  return city || address.trim()
+}
+
 export function formatMoney(amount: number): string {
   return new Intl.NumberFormat("ru-KZ", {
     style: "currency",

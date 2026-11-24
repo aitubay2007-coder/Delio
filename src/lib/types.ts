@@ -38,9 +38,13 @@ export type DayHours = { closed: boolean; open: string; close: string }
 export type WorkingHours = {
   timezone: string
   days: Record<DayKey, DayHours>
+  /** Minutes between delivery slots. Shoppers only see slots inside open hours. */
+  slot_minutes: number
+  /** How many open days ahead can be booked. */
+  horizon_days: number
 }
 
-export type DeliveryZone = { id: string; name: string; price: number }
+export type DeliveryZone = { id: string; name: string; price: number; quoted?: boolean }
 
 export type FormField = {
   id: string

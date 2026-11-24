@@ -1,56 +1,52 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react"
-import { motion, useReducedMotion } from "framer-motion"
+import { useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties } from "react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { TEMPLATE_THEME, isOpenNow, storeAcceptsOrders, todayHours } from "@/lib/catalog"
-import { deriveAccent } from "@/lib/color"
-import { addDaysIso, deriveSource, formatMoney, orderNumber, todayIso, utmPayload } from "@/lib/format"
+import { COPPER, GRAPHITE, IVORY, TEMPLATE_THEME, isOpenNow, storeAcceptsOrders, todayHours } from "@/lib/catalog"
+import { contrast, deriveAccent, normalizeHex, pickText } from "@/lib/color"
+import { deriveSource, formatMoney, orderNumber, todayIso, utmPayload } from "@/lib/format"
+import { dateOptions, timeOptions } from "@/lib/schedule"
 import { createClient } from "@/lib/supabase/client"
 import type { Fulfillment, Product, StoreBundle, TemplateId } from "@/lib/types"
 import { ru } from "@/i18n/ru"
 import { buildWhatsappMessage, whatsappHref } from "@/lib/whatsapp"
 import { Frame } from "@/components/storefront/frame"
 import { Catalog } from "@/components/storefront/layouts"
+import { CartDock, Choice, PrimaryButton, QtyControl, TextField, Totals } from "@/components/storefront/pieces"
 
 type Line = { productId: string; qty: number }
-type Step = "cart" | "form" | "review"
+type Step = "cart" | "form"
 
 export function Storefront({
   bundle,
   template,
   accent,
   embedded = false,
-  demo = false,
 }: {
   bundle: StoreBundle
   template?: TemplateId
   accent?: string
   embedded?: boolean
-  demo?: boolean
 }) {
-  const reduce = useReducedMotion()
   const activeTemplate = template ?? bundle.store.template
   const theme = TEMPLATE_THEME[activeTemplate]
-  const tokens = deriveAccent(accent ?? bundle.store.accent_color, theme.bg)
+  const custom = normalizeHex(accent ?? bundle.store.accent_color) ?? COPPER
+  const tokens = deriveAccent(custom, theme.bg)
+  const cinematic = activeTemplate === "cinematic"
+  const palette = !cinematic && custom === COPPER
+  const buttonBg = palette ? GRAPHITE : tokens.buttonBg
+  const buttonText = palette ? IVORY : tokens.buttonText
+  const onAccent = contrast(GRAPHITE, tokens.accent) >= 4.5 ? GRAPHITE : pickText(tokens.accent)
   const rawCart = useSyncExternalStore(subscribeCart, () => readCart(bundle.store.slug), () => "[]")
-  const storedLines = useMemo(() => parseCart(rawCart), [rawCart])
-  const [demoLines, setDemoLines] = useState<Line[]>([])
-  const lines = demo ? demoLines : storedLines
+  const lines = useMemo(() => parseCart(rawCart), [rawCart])
   const setLines = (update: (current: Line[]) => Line[]) => {
-    if (demo) {
-      setDemoLines((current) => update(current))
-      return
-    }
     writeCart(bundle.store.slug, update(parseCart(readCart(bundle.store.slug))))
   }
-  const scroller = useRef<HTMLDivElement>(null)
   const [product, setProduct] = useState<Product | null>(null)
   const [cartOpen, setCartOpen] = useState(false)
   const [step, setStep] = useState<Step>("cart")
   const [category, setCategory] = useState<string>("all")
   const [occasion, setOccasion] = useState<string | null>(null)
-  const [pulse, setPulse] = useState(0)
   const openState = useSyncExternalStore(
     () => () => {},
     () => (isOpenNow(bundle.store.working_hours) ? "open" : "closed"),
@@ -62,11 +58,12 @@ export function Storefront({
     "--sf-ink": theme.ink,
     "--sf-muted": theme.muted,
     "--sf-accent": tokens.accent,
-    "--sf-button-bg": tokens.buttonBg,
-    "--sf-button-text": tokens.buttonText,
-    "--sf-text": tokens.text,
-    "--sf-soft": tokens.soft,
-    "--sf-line": tokens.line,
+    "--sf-on-accent": onAccent,
+    "--sf-button-bg": buttonBg,
+    "--sf-button-text": buttonText,
+    "--sf-text": theme.ink,
+    "--sf-soft": cinematic ? "rgba(244,240,232,0.08)" : "rgba(183,130,104,0.12)",
+    "--sf-line": cinematic ? "rgba(244,240,232,0.16)" : "rgba(41,37,36,0.12)",
     "--sf-radius": theme.radius,
     background: theme.bg,
     color: theme.ink,
@@ -83,56 +80,6 @@ export function Storefront({
   const subtotal = detailed.reduce((sum, line) => sum + line.product.price * line.qty, 0)
   const count = detailed.reduce((sum, line) => sum + line.qty, 0)
 
-  useEffect(() => {
-    if (!demo || reduce) return
-    let stop = false
-    const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
-    async function play() {
-      while (!stop) {
-        await wait(500)
-        if (stop) return
-        setDemoLines([])
-        setCartOpen(false)
-        setStep("cart")
-        scroller.current?.scrollTo({ top: 0, behavior: "smooth" })
-        await wait(1000)
-        if (stop) return
-        scroller.current?.scrollTo({ top: 320, behavior: "smooth" })
-        await wait(1200)
-        if (stop) return
-        const first = bundle.products.find((item) => item.available)
-        if (first) {
-          setDemoLines([{ productId: first.id, qty: 1 }])
-          setPulse((value) => value + 1)
-        }
-        await wait(800)
-        if (stop) return
-        setStep("cart")
-        setCartOpen(true)
-        await wait(1200)
-        if (stop) return
-        setStep("form")
-        await wait(5200)
-        if (stop) return
-        setStep("review")
-        await wait(2600)
-      }
-    }
-    void play()
-    return () => {
-      stop = true
-    }
-  }, [demo, reduce, bundle.products])
-
-  useEffect(() => {
-    if (bundle.source !== "database" || demo) return
-    const day = todayIso(bundle.store.working_hours.timezone)
-    const key = `vitrina-view-${bundle.store.id}-${day}`
-    if (sessionStorage.getItem(key)) return
-    sessionStorage.setItem(key, "1")
-    void logEvent(bundle, "store_view", null, null)
-  }, [bundle, demo])
-
   function add(item: Product) {
     if (!item.available) return
     setLines((current) => {
@@ -144,7 +91,6 @@ export function Storefront({
       }
       return [...current, { productId: item.id, qty: 1 }]
     })
-    setPulse((value) => value + 1)
     if (bundle.source === "database") void logEvent(bundle, "add_to_cart", item.id, null)
   }
 
@@ -156,8 +102,7 @@ export function Storefront({
     )
   }
 
-  const visible =
-    category === "all" ? products : products.filter((item) => item.category_id === category)
+  const visible = category === "all" ? products : products.filter((item) => item.category_id === category)
   const dayLabel = useSyncExternalStore(
     () => () => {},
     () => {
@@ -166,17 +111,26 @@ export function Storefront({
     },
     () => "",
   )
+  useEffect(() => {
+    if (bundle.source !== "database") return
+    const day = todayIso(bundle.store.working_hours.timezone)
+    const key = `vitrina-view-${bundle.store.id}-${day}`
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, "1")
+    void logEvent(bundle, "store_view", null, null)
+  }, [bundle])
+
   const live = storeAcceptsOrders(bundle.store)
 
   if (!live) {
     return (
-      <main className="grid min-h-dvh place-items-center px-6" style={vars}>
+      <main className="grid min-h-dvh place-items-center px-5" style={vars}>
         <div className="max-w-md text-center">
-          <p className="text-xs tracking-[0.18em] uppercase" style={{ color: "var(--sf-muted)" }}>
+          <p className="text-[13px] tracking-[0.14em] uppercase" style={{ color: "var(--sf-muted)" }}>
             {bundle.store.name}
           </p>
-          <h1 className="mt-4 font-serif text-4xl">{ru.store.pausedTitle}</h1>
-          <p className="mt-4 text-sm leading-6" style={{ color: "var(--sf-muted)" }}>
+          <h1 className="mt-4 text-[32px] leading-none">{ru.store.pausedTitle}</h1>
+          <p className="mt-4 text-base leading-6" style={{ color: "var(--sf-muted)" }}>
             {ru.store.pausedText}
           </p>
         </div>
@@ -184,89 +138,60 @@ export function Storefront({
     )
   }
 
-  return (
-    <div className={demo ? "relative h-full" : undefined} style={demo ? vars : undefined}>
+  const dock = count > 0 && (
     <div
-      ref={demo ? scroller : undefined}
-      data-template={activeTemplate}
-      className={demo ? "h-full overflow-y-auto pb-24" : embedded ? "relative min-h-full pb-24" : "min-h-dvh pb-28"}
-      style={demo ? undefined : vars}
+      className={
+        embedded
+          ? "absolute inset-x-0 bottom-0 z-30 px-4 pb-3"
+          : "pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(12px,env(safe-area-inset-bottom))]"
+      }
     >
-      <Catalog
-        template={activeTemplate}
-        bundle={bundle}
-        products={visible}
-        category={category}
-        onCategory={setCategory}
-        onOpen={(item) => {
-          setProduct(item)
-          if (bundle.source === "database") {
-            const key = `vitrina-product-${item.id}`
-            if (!sessionStorage.getItem(key)) {
-              sessionStorage.setItem(key, "1")
-              void logEvent(bundle, "product_view", item.id, null)
-            }
-          }
-        }}
-        onAdd={add}
-        openNow={openNow}
-        dayLabel={dayLabel}
-        occasion={occasion}
-        onOccasion={setOccasion}
-      />
-
-      {count > 0 && !demo && (
-        <div className={embedded ? "sticky bottom-0 z-30 flex justify-center px-4 pb-4" : "pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"}>
-          <motion.button
-            type="button"
-            onClick={() => {
-              setStep("cart")
-              setCartOpen(true)
-            }}
-            animate={reduce ? undefined : { scale: [1, 1.03, 1] }}
-            key={pulse}
-            className="pointer-events-auto flex w-full max-w-md items-center justify-between px-5 py-3.5 text-base shadow-[0_16px_40px_rgba(20,18,15,0.2)]"
-            style={{
-              background: "var(--sf-button-bg)",
-              color: "var(--sf-button-text)",
-              borderRadius: activeTemplate === "vivid" ? "999px" : "var(--sf-radius)",
-            }}
-          >
-            <span>
-              {count} · {formatMoney(subtotal)}
-            </span>
-            <span>{ru.store.cart}</span>
-          </motion.button>
-        </div>
-      )}
-
+      <div className={embedded ? undefined : "pointer-events-auto w-full max-w-xl"}>
+        <CartDock
+          count={count}
+          amount={subtotal}
+          onOpen={() => {
+            setStep("cart")
+            setCartOpen(true)
+          }}
+        />
       </div>
-      {demo && count > 0 && !cartOpen && (
-        <div className="absolute inset-x-0 bottom-0 z-30 px-3 pb-3">
-          <div className="flex items-center justify-between rounded-full px-4 py-3 text-sm shadow-[0_10px_30px_rgba(20,18,15,0.18)]" style={{ background: "var(--sf-button-bg)", color: "var(--sf-button-text)" }}>
-            <span>{count} · {formatMoney(subtotal)}</span>
-            <span>{ru.store.cart}</span>
-          </div>
-        </div>
-      )}
-      {demo && cartOpen && (
-        <div className="absolute inset-x-0 bottom-0 z-40 max-h-[78%] overflow-y-auto rounded-t-[28px] shadow-[0_-24px_60px_rgba(20,18,15,0.2)]" style={vars}>
-          <Checkout
-            bundle={bundle}
-            lines={detailed}
-            subtotal={subtotal}
-            step={step}
-            setStep={setStep}
-            setQty={setQty}
-            occasion={occasion}
-            onClose={() => setCartOpen(false)}
-            scripted={step === "form" || step === "review"}
-          />
-        </div>
-      )}
+    </div>
+  )
 
-      {!demo && (
-      <>
+  return (
+    <div className={embedded ? "relative h-full" : undefined} style={embedded ? vars : undefined}>
+      <div
+        className={embedded ? "absolute inset-0 overflow-y-auto" : "min-h-dvh"}
+        style={embedded ? undefined : vars}
+      >
+        <Catalog
+          template={activeTemplate}
+          bundle={bundle}
+          products={visible}
+          category={category}
+          onCategory={setCategory}
+          onOpen={(item) => {
+            setProduct(item)
+            if (bundle.source === "database") {
+              const key = `vitrina-product-${item.id}`
+              if (!sessionStorage.getItem(key)) {
+                sessionStorage.setItem(key, "1")
+                void logEvent(bundle, "product_view", item.id, null)
+              }
+            }
+          }}
+          onAdd={add}
+          onQty={(item, qty) => setQty(item.id, qty)}
+          qtyFor={(id) => lines.find((line) => line.productId === id)?.qty ?? 0}
+          openNow={openNow}
+          dayLabel={dayLabel}
+          occasion={occasion}
+          onOccasion={setOccasion}
+        />
+      </div>
+      {dock}
+
       <Sheet open={Boolean(product)} onOpenChange={(open) => !open && setProduct(null)}>
         <SheetContent side="bottom" showCloseButton className="sf-sheet sf-sheet-fill overflow-y-auto" style={vars}>
           {product && (
@@ -276,26 +201,25 @@ export function Storefront({
                 <SheetDescription>{product.description}</SheetDescription>
               </SheetHeader>
               <Gallery photos={product.photos.map((photo) => photo.storage_path)} alt={product.name} />
-              <div className="mt-5 flex items-end justify-between gap-4">
-                <h2 className="text-3xl leading-none">{product.name}</h2>
-                <p style={{ color: "var(--sf-text)" }}>{formatMoney(product.price)}</p>
+              <div className="mt-4 flex items-end justify-between gap-4">
+                <h2 className="text-[22px] leading-tight">{product.name}</h2>
+                <p className="shrink-0 text-base tabular-nums">{formatMoney(product.price)}</p>
               </div>
-              <p className="mt-4 max-w-prose text-sm leading-6" style={{ color: "var(--sf-muted)" }}>
+              <p className="mt-3 max-w-prose text-base leading-6" style={{ color: "var(--sf-muted)" }}>
                 {product.description}
               </p>
-              <button
-                type="button"
-                disabled={!product.available}
-                onClick={() => add(product)}
-                className="mt-6 h-12 w-full text-sm disabled:opacity-40"
-                style={{
-                  background: "var(--sf-button-bg)",
-                  color: "var(--sf-button-text)",
-                  borderRadius: "var(--sf-radius)",
-                }}
-              >
-                {product.available ? ru.store.add : ru.store.unavailable}
-              </button>
+              <div className="mt-4">
+                {(lines.find((line) => line.productId === product.id)?.qty ?? 0) > 0 ? (
+                  <QtyControl
+                    qty={lines.find((line) => line.productId === product.id)?.qty ?? 0}
+                    onChange={(qty) => setQty(product.id, qty)}
+                  />
+                ) : (
+                  <PrimaryButton disabled={!product.available} onClick={() => add(product)}>
+                    {product.available ? ru.store.add : ru.store.unavailable}
+                  </PrimaryButton>
+                )}
+              </div>
             </>
           )}
         </SheetContent>
@@ -309,8 +233,10 @@ export function Storefront({
         }}
       >
         <SheetContent side="bottom" className="sf-sheet overflow-y-auto" style={vars}>
-          <SheetHeader>
-            <SheetTitle>{step === "review" ? ru.store.messageTitle : step === "form" ? "Оформление" : ru.store.cart}</SheetTitle>
+          <SheetHeader className="pr-12">
+            <SheetTitle className="text-[22px] leading-tight">
+              {step === "form" ? ru.store.checkoutTitle : ru.store.cart}
+            </SheetTitle>
             <SheetDescription className="sr-only">{bundle.store.name}</SheetDescription>
           </SheetHeader>
           <Checkout
@@ -321,38 +247,37 @@ export function Storefront({
             setStep={setStep}
             setQty={setQty}
             occasion={occasion}
-            onClose={() => setCartOpen(false)}
+            onClose={() => {
+              setCartOpen(false)
+              document.getElementById("catalog")?.scrollIntoView({ block: "start" })
+            }}
           />
         </SheetContent>
       </Sheet>
-      </>
-      )}
     </div>
   )
 }
 
 function Gallery({ photos, alt }: { photos: string[]; alt: string }) {
-  const ref = useRef<HTMLDivElement>(null)
   const [index, setIndex] = useState(0)
   const sources = photos.length ? photos : [null]
   return (
     <div>
       <div
-        ref={ref}
         onScroll={(event) => {
           const el = event.currentTarget
           setIndex(Math.round(el.scrollLeft / Math.max(el.clientWidth, 1)))
         }}
-        className="sf-scroll flex aspect-[4/5] overflow-x-auto"
+        className="sf-scroll flex aspect-[4/5] overflow-x-auto rounded-[14px]"
       >
         {sources.map((path, photoIndex) => (
           <div key={path ?? photoIndex} className="h-full w-full shrink-0">
-            <Frame path={path} alt={alt} className="h-full w-full" />
+            <Frame path={path} alt={alt} fit="contain" className="h-full w-full" />
           </div>
         ))}
       </div>
       {sources.length > 1 && (
-        <div className="mt-3 flex justify-center gap-1.5">
+        <div className="mt-3 flex justify-center gap-2">
           {sources.map((path, dot) => (
             <span
               key={path ?? dot}
@@ -366,6 +291,19 @@ function Gallery({ photos, alt }: { photos: string[]; alt: string }) {
   )
 }
 
+let cachedNow = 0
+
+function useNow() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (!cachedNow) cachedNow = Date.now()
+      return cachedNow
+    },
+    () => 0,
+  )
+}
+
 function Checkout({
   bundle,
   lines,
@@ -375,7 +313,6 @@ function Checkout({
   setQty,
   occasion,
   onClose,
-  scripted = false,
 }: {
   bundle: StoreBundle
   lines: (Line & { product: Product })[]
@@ -385,78 +322,46 @@ function Checkout({
   setQty: (id: string, qty: number) => void
   occasion: string | null
   onClose: () => void
-  scripted?: boolean
 }) {
   const store = bundle.store
+  const nowMs = useNow()
   const [fulfillment, setFulfillment] = useState<Fulfillment>(store.delivery_enabled ? "delivery" : "pickup")
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("+7")
   const [address, setAddress] = useState("")
-  const [zoneId, setZoneId] = useState(store.delivery_zones[0]?.id ?? "")
+  const [zoneId, setZoneId] = useState(store.delivery_zones.find((zone) => !zone.quoted)?.id ?? store.delivery_zones[0]?.id ?? "")
   const [date, setDate] = useState("")
   const [time, setTime] = useState("")
   const [comment, setComment] = useState("")
   const [extras, setExtras] = useState<Record<string, string>>({})
   const [part, setPart] = useState<"who" | "where" | "when">("who")
   const [giftOpen, setGiftOpen] = useState(false)
-  const [error, setError] = useState("")
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [number, setNumber] = useState("")
   const zone = store.delivery_zones.find((item) => item.id === zoneId) ?? null
-  const deliveryPrice = fulfillment === "delivery" ? (zone?.price ?? 0) : 0
+  const quoted = fulfillment === "delivery" && (store.delivery_zones.length === 0 || Boolean(zone?.quoted))
+  const deliveryPrice = fulfillment === "delivery" && !quoted ? (zone?.price ?? 0) : 0
   const total = subtotal + deliveryPrice
   const belowMin = store.min_order > 0 && subtotal < store.min_order
+  const days = useMemo(
+    () => (nowMs ? dateOptions(store.working_hours, new Date(nowMs)) : []),
+    [nowMs, store.working_hours],
+  )
+  const times = useMemo(
+    () => (nowMs && date ? timeOptions(store.working_hours, date, new Date(nowMs)) : []),
+    [nowMs, date, store.working_hours],
+  )
 
-  useEffect(() => {
-    if (!scripted) return
-    if (step === "review") {
-      const id = window.setTimeout(() => {
-        setName("Алия")
-        setPhone("+77010000001")
-        setAddress("ул. Абая 10")
-        setDate("2026-11-25")
-        setTime("14:00")
-        setNumber("A7K2QM")
-        setExtras((current) => ({ ...current, card_text: "С днём рождения" }))
-      }, 0)
-      return () => window.clearTimeout(id)
-    }
-    if (step !== "form") return
-    let cancelled = false
-    const typeInto = async (setter: (value: string) => void, text: string) => {
-      for (let index = 1; index <= text.length; index += 1) {
-        if (cancelled) return
-        setter(text.slice(0, index))
-        await new Promise((resolve) => window.setTimeout(resolve, 48))
-      }
-    }
-    void (async () => {
-      await new Promise((resolve) => window.setTimeout(resolve, 0))
-      if (cancelled) return
-      setPart("who")
-      await typeInto(setName, "Алия")
-      await typeInto(setPhone, "+77010000001")
-      if (cancelled) return
-      setPart("where")
-      await typeInto(setAddress, "ул. Абая 10")
-      if (cancelled) return
-      setPart("when")
-      setDate("2026-11-25")
-      setTime("14:00")
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [scripted, step])
-
-  const message = buildWhatsappMessage({
+  const messageInput = (code: string) => ({
     shopName: store.name,
-    orderNumber: number || "······",
+    orderNumber: code,
     items: lines.map((line) => ({ name: line.product.name, qty: line.qty, price: line.product.price })),
     subtotal,
     fulfillment,
     deliveryPrice,
-    zoneName: fulfillment === "delivery" ? zone?.name : null,
+    deliveryQuoted: quoted,
+    zoneName: fulfillment === "delivery" && !quoted ? zone?.name : null,
     total,
     customerName: name.trim(),
     customerPhone: phone.trim(),
@@ -465,36 +370,44 @@ function Checkout({
     time,
     comment: [occasion, comment.trim()].filter(Boolean).join(". "),
     extras: store.order_form.fields
-      .filter((field) => field.type !== "checkbox" || extras[field.key] === "да")
-      .map((field) => ({
-        label: field.label,
-        value: field.type === "checkbox" ? "да" : (extras[field.key] ?? ""),
-      })),
+      .filter((field) => (field.type === "checkbox" ? extras[field.key] === "да" : extras[field.key]?.trim()))
+      .map((field) => ({ label: field.label, value: field.type === "checkbox" ? "да" : extras[field.key] })),
   })
 
-  function validate() {
-    if (!name.trim()) return ru.store.required
-    if (phone.replace(/\D/g, "").length < 10) return ru.store.required
-    if (fulfillment === "delivery" && address.trim().length < 3) return ru.store.required
-    if (fulfillment === "delivery" && store.delivery_zones.length > 0 && !zone) return ru.store.required
-    if (!date || !time) return ru.store.required
-    for (const field of store.order_form.fields) {
-      if (!field.required) continue
-      if (field.type === "checkbox" && extras[field.key] !== "да") return ru.store.required
-      if (field.type !== "checkbox" && !extras[field.key]?.trim()) return ru.store.required
+  const message = buildWhatsappMessage(messageInput(number || "······"))
+
+  function problems(scope: "who" | "where" | "when") {
+    const next: Record<string, string> = {}
+    if (scope === "who") {
+      if (name.trim().length < 2) next.name = ru.store.nameError
+      if (phone.replace(/\D/g, "").length < 10) next.phone = ru.store.phoneError
     }
-    if (belowMin) return `${ru.store.minOrder}: ${formatMoney(store.min_order)}`
-    return ""
+    if (scope === "where" && fulfillment === "delivery" && address.trim().length < 4) {
+      next.address = ru.store.addressError
+    }
+    if (scope === "when") {
+      if (!date) next.date = ru.store.dateError
+      if (!time) next.time = ru.store.timeError
+      if (belowMin) next.min = `${ru.store.minOrder}: ${formatMoney(store.min_order)}`
+    }
+    return next
+  }
+
+  function backLabel() {
+    return store.niche === "flowers" ? ru.store.backToBouquets : ru.store.backToGoods
   }
 
   async function send() {
-    const problem = validate()
-    if (problem) {
-      setError(problem)
+    const problem = { ...problems("who"), ...problems("where"), ...problems("when") }
+    if (Object.keys(problem).length) {
+      setErrors(problem)
+      if (problem.name || problem.phone) setPart("who")
+      else if (problem.address) setPart("where")
+      else setPart("when")
       return
     }
     setSaving(true)
-    setError("")
+    setErrors({})
     let code = number || orderNumber()
     const payload = {
       store_id: store.id,
@@ -525,15 +438,12 @@ function Checkout({
       total,
       currency: "KZT",
     }
-    const href = whatsappHref(
-      store.whatsapp_e164,
-      buildWhatsappMessage({ ...messageInput(code) }),
-    )
+    const hrefFor = (orderCode: string) => whatsappHref(store.whatsapp_e164, buildWhatsappMessage(messageInput(orderCode)))
 
     if (bundle.source !== "database") {
       setNumber(code)
       setSaving(false)
-      window.location.assign(href)
+      window.location.assign(hrefFor(code))
       return
     }
 
@@ -555,334 +465,222 @@ function Checkout({
       if (!saved) throw new Error("duplicate")
       setNumber(code)
       await logEvent(bundle, "whatsapp_click", null, total)
-      window.location.assign(whatsappHref(store.whatsapp_e164, buildWhatsappMessage(messageInput(code))))
+      window.location.assign(hrefFor(code))
     } catch (caught) {
       const text = caught instanceof Error ? caught.message : ""
-      setError(humanError(text))
+      setErrors({ form: humanError(text) })
       setSaving(false)
-    }
-
-    function messageInput(code: string) {
-      return {
-        shopName: store.name,
-        orderNumber: code,
-        items: lines.map((line) => ({ name: line.product.name, qty: line.qty, price: line.product.price })),
-        subtotal,
-        fulfillment,
-        deliveryPrice,
-        zoneName: fulfillment === "delivery" ? zone?.name : null,
-        total,
-        customerName: name.trim(),
-        customerPhone: phone.trim(),
-        address,
-        date,
-        time,
-        comment: [occasion, comment.trim()].filter(Boolean).join(". "),
-        extras: store.order_form.fields
-          .filter((field) => (field.type === "checkbox" ? extras[field.key] === "да" : extras[field.key]?.trim()))
-          .map((field) => ({ label: field.label, value: field.type === "checkbox" ? "да" : extras[field.key] })),
-      }
     }
   }
 
   if (!lines.length) {
-    return <p className="px-4 text-sm" style={{ color: "var(--sf-muted)" }}>{ru.store.emptyCart}</p>
+    return (
+      <div className="px-4 pb-8">
+        <p className="text-base">{ru.store.emptyCart}</p>
+        <div className="mt-4">
+          <PrimaryButton onClick={onClose}>{backLabel()}</PrimaryButton>
+        </div>
+      </div>
+    )
   }
 
   if (step === "cart") {
     return (
-      <div className="space-y-4 px-4 pb-6">
+      <div className="sf-step space-y-4 px-4 pb-8">
         {lines.map((line) => (
           <div key={line.productId} className="flex items-center gap-3">
-            <Frame path={line.product.photos[0]?.storage_path} alt="" className="h-16 w-16 rounded-xl" />
+            <Frame path={line.product.photos[0]?.storage_path} alt="" fit="contain" className="h-16 w-14 shrink-0 rounded-[12px]" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-base">{line.product.name}</p>
-              <p className="text-base" style={{ color: "var(--sf-text)" }}>
-                {formatMoney(line.product.price)}
-              </p>
+              <p className="text-base tabular-nums">{formatMoney(line.product.price)}</p>
+              <button type="button" onClick={() => setQty(line.productId, 0)} className="mt-1 h-11 text-base" style={{ color: "var(--sf-muted)" }}>
+                {ru.store.removeItem}
+              </button>
             </div>
-            <div className="flex items-center gap-2">
-              <button type="button" aria-label={ru.a11y.decrease} onClick={() => setQty(line.productId, line.qty - 1)} className="h-8 w-8 border" style={{ borderColor: "var(--sf-line)" }}>–</button>
-              <span className="w-4 text-center text-sm">{line.qty}</span>
-              <button type="button" aria-label={ru.a11y.increase} onClick={() => setQty(line.productId, line.qty + 1)} className="h-8 w-8 border" style={{ borderColor: "var(--sf-line)" }}>+</button>
+            <div className="w-28 shrink-0">
+              <QtyControl qty={line.qty} onChange={(qty) => setQty(line.productId, qty)} />
             </div>
           </div>
         ))}
-        <Row label={ru.store.goods} value={formatMoney(subtotal)} />
+        <div className="flex items-center justify-between text-base font-medium">
+          <span>{ru.store.total}</span>
+          <span className="tabular-nums">{formatMoney(subtotal)}</span>
+        </div>
         {belowMin && (
-          <p className="text-sm" style={{ color: "var(--sf-text)" }}>
+          <p className="text-base">
             {ru.store.minOrder}: {formatMoney(store.min_order)}
           </p>
         )}
-        <button
-          type="button"
+        <PrimaryButton
           disabled={belowMin}
           onClick={() => {
             setStep("form")
+            setPart("who")
             if (bundle.source === "database") void logEvent(bundle, "checkout_start", null, null)
           }}
-          className="h-12 w-full text-sm disabled:opacity-40"
-          style={{ background: "var(--sf-button-bg)", color: "var(--sf-button-text)", borderRadius: "var(--sf-radius)" }}
         >
           {ru.store.checkout}
-        </button>
+        </PrimaryButton>
       </div>
     )
   }
 
-  if (step === "form") {
-    const days = dateChoices(store.working_hours.timezone)
-    const times = ["10:00", "12:00", "14:00", "16:00", "18:00"]
-    const giftFields = store.order_form.fields
-    function nextPart() {
-      if (part === "who") {
-        if (name.trim().length < 2) return setError("Напишите имя.")
-        if (phone.replace(/\D/g, "").length < 10) return setError("Напишите телефон.")
-        setError("")
-        setPart("where")
-        return
-      }
-      if (part === "where") {
-        if (fulfillment === "delivery" && address.trim().length < 4) return setError("Напишите адрес.")
-        setError("")
-        setPart("when")
-        return
-      }
-      const problem = validate()
-      if (problem) {
-        setError(problem)
-        return
-      }
-      if (!number) setNumber(orderNumber())
-      setError("")
-      setStep("review")
-    }
-    return (
-      <div className="flex max-h-[min(78dvh,680px)] flex-col">
-        <div className="space-y-4 overflow-y-auto px-5 pb-4">
-          <p className="text-sm tracking-[0.12em] uppercase" style={{ color: "var(--sf-muted)" }}>
-            {part === "who" ? "Контакты" : part === "where" ? "Доставка" : "Когда привезти"}
-          </p>
-          {part === "who" && (
-            <>
-              <Field label={ru.store.name} value={name} onChange={setName} />
-              <Field label={ru.store.phone} value={phone} onChange={setPhone} inputMode="tel" />
-            </>
+  return (
+    <div key={part} className="sf-step space-y-4 px-4 pb-8">
+      {part === "who" && (
+        <>
+          <TextField label={ru.store.yourName} value={name} onChange={setName} error={errors.name} />
+          <TextField label={ru.store.phone} value={phone} onChange={setPhone} error={errors.phone} inputMode="tel" />
+        </>
+      )}
+      {part === "where" && (
+        <>
+          {store.delivery_enabled && store.pickup_enabled && (
+            <div className="grid grid-cols-2 gap-2">
+              <Choice active={fulfillment === "delivery"} onClick={() => setFulfillment("delivery")}>{ru.store.delivery}</Choice>
+              <Choice active={fulfillment === "pickup"} onClick={() => setFulfillment("pickup")}>{ru.store.pickup}</Choice>
+            </div>
           )}
-          {part === "where" && (
-            <>
-              {store.delivery_enabled && store.pickup_enabled && (
-                <div className="grid grid-cols-2 gap-2">
-                  {(["delivery", "pickup"] as const).map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setFulfillment(option)}
-                      className="h-12 text-base"
-                      style={{
-                        borderRadius: "var(--sf-radius)",
-                        background: fulfillment === option ? "var(--sf-button-bg)" : "transparent",
-                        color: fulfillment === option ? "var(--sf-button-text)" : "var(--sf-ink)",
-                        border: fulfillment === option ? "none" : "1px solid var(--sf-line)",
-                      }}
-                    >
-                      {option === "delivery" ? ru.store.delivery : ru.store.pickup}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {fulfillment === "delivery" && <Field label={ru.store.address} value={address} onChange={setAddress} />}
-              {fulfillment === "delivery" && store.delivery_zones.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {store.delivery_zones.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setZoneId(item.id)}
-                      className="rounded-full px-3 py-2 text-base"
-                      style={{
-                        background: zoneId === item.id ? "var(--sf-button-bg)" : "transparent",
-                        color: zoneId === item.id ? "var(--sf-button-text)" : "var(--sf-ink)",
-                        border: zoneId === item.id ? "none" : "1px solid var(--sf-line)",
-                      }}
-                    >
-                      {item.name} · {formatMoney(item.price)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
+          {fulfillment === "pickup" && store.address && (
+            <p className="text-base">
+              <span className="block text-[13px]" style={{ color: "var(--sf-muted)" }}>{ru.store.pickupHere}</span>
+              {store.address}
+            </p>
           )}
-          {part === "when" && (
-            <>
-              <p className="text-base" style={{ color: "var(--sf-muted)" }}>{ru.store.date}</p>
-              <div className="flex flex-wrap gap-2">
-                {days.map((day) => (
-                  <button
-                    key={day.iso}
-                    type="button"
-                    onClick={() => setDate(day.iso)}
-                    className="rounded-full px-3 py-2 text-base"
-                    style={{
-                      background: date === day.iso ? "var(--sf-button-bg)" : "transparent",
-                      color: date === day.iso ? "var(--sf-button-text)" : "var(--sf-ink)",
-                      border: date === day.iso ? "none" : "1px solid var(--sf-line)",
-                    }}
-                  >
-                    {day.label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-base" style={{ color: "var(--sf-muted)" }}>{ru.store.time}</p>
-              <div className="flex flex-wrap gap-2">
-                {times.map((slot) => (
-                  <button
-                    key={slot}
-                    type="button"
-                    onClick={() => setTime(slot)}
-                    className="rounded-full px-3 py-2 text-base"
-                    style={{
-                      background: time === slot ? "var(--sf-button-bg)" : "transparent",
-                      color: time === slot ? "var(--sf-button-text)" : "var(--sf-ink)",
-                      border: time === slot ? "none" : "1px solid var(--sf-line)",
-                    }}
-                  >
-                    {slot}
-                  </button>
-                ))}
-              </div>
-              {giftFields.length > 0 && (
-                <div className="rounded-2xl border" style={{ borderColor: "var(--sf-line)" }}>
-                  <button type="button" onClick={() => setGiftOpen((open) => !open)} className="flex w-full items-center justify-between px-4 py-3 text-left text-base">
-                    Открытка и получатель
-                    <span>{giftOpen ? "–" : "+"}</span>
-                  </button>
-                  {giftOpen && (
-                    <div className="space-y-3 px-4 pb-4">
-                      {giftFields.map((field) =>
-                        field.type === "checkbox" ? (
-                          <label key={field.key} className="flex items-center gap-2 text-base">
-                            <input
-                              type="checkbox"
-                              checked={extras[field.key] === "да"}
-                              onChange={(event) => setExtras((current) => ({ ...current, [field.key]: event.target.checked ? "да" : "" }))}
-                            />
-                            {field.label}
-                          </label>
-                        ) : (
-                          <Field
-                            key={field.key}
-                            label={field.label}
-                            value={extras[field.key] ?? ""}
-                            onChange={(value) => setExtras((current) => ({ ...current, [field.key]: value }))}
-                            multiline={field.type === "textarea"}
-                          />
-                        ),
-                      )}
-                    </div>
+          {fulfillment === "delivery" && (
+            <TextField label={ru.store.deliveryAddress} value={address} onChange={setAddress} error={errors.address} />
+          )}
+          {fulfillment === "delivery" && store.delivery_zones.length > 0 && (
+            <div className="flex flex-wrap gap-2" role="group" aria-label={ru.store.zone}>
+              {store.delivery_zones.map((item) => (
+                <Choice key={item.id} active={zoneId === item.id} onClick={() => setZoneId(item.id)}>
+                  {item.name} · {item.quoted ? ru.store.deliveryQuote : formatMoney(item.price)}
+                </Choice>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+      {part === "when" && (
+        <>
+          <div role="group" aria-label={ru.store.date}>
+            <p className="text-[13px]" style={{ color: "var(--sf-muted)" }}>{ru.store.date}</p>
+            <div className="mt-2 flex w-full min-w-0 flex-wrap gap-2">
+              {days.map((day) => (
+                <Choice
+                  key={day.iso}
+                  active={date === day.iso}
+                  onClick={() => {
+                    setDate(day.iso)
+                    setTime("")
+                  }}
+                >
+                  {day.label}
+                </Choice>
+              ))}
+            </div>
+            {errors.date && <p role="alert" className="mt-2 text-[13px]">{errors.date}</p>}
+          </div>
+          <div role="group" aria-label={ru.store.time}>
+            <p className="text-[13px]" style={{ color: "var(--sf-muted)" }}>{ru.store.time}</p>
+            <div className="mt-2 flex w-full min-w-0 flex-wrap gap-2">
+              {times.map((slot) => (
+                <Choice key={slot} active={time === slot} onClick={() => setTime(slot)}>{slot}</Choice>
+              ))}
+            </div>
+            {errors.time && <p role="alert" className="mt-2 text-[13px]">{errors.time}</p>}
+          </div>
+          {store.order_form.fields.length > 0 && (
+            <div className="rounded-[14px] border" style={{ borderColor: "var(--sf-line)" }}>
+              <button type="button" onClick={() => setGiftOpen((open) => !open)} className="flex h-11 w-full items-center justify-between px-3 text-left text-base">
+                {ru.store.card}
+                <span>{giftOpen ? "−" : "+"}</span>
+              </button>
+              {giftOpen && (
+                <div className="space-y-3 px-3 pb-3">
+                  {store.order_form.fields.map((field) =>
+                    field.type === "checkbox" ? (
+                      <label key={field.key} className="flex min-h-11 items-center gap-2 text-base">
+                        <input
+                          type="checkbox"
+                          checked={extras[field.key] === "да"}
+                          onChange={(event) => setExtras((current) => ({ ...current, [field.key]: event.target.checked ? "да" : "" }))}
+                        />
+                        {field.label}
+                      </label>
+                    ) : (
+                      <TextField
+                        key={field.key}
+                        label={field.label}
+                        value={extras[field.key] ?? ""}
+                        onChange={(value) => setExtras((current) => ({ ...current, [field.key]: value }))}
+                        multiline={field.type === "textarea"}
+                      />
+                    ),
                   )}
                 </div>
               )}
-              <Field label={ru.store.comment} value={comment} onChange={setComment} multiline />
-              <Row label={ru.store.total} value={formatMoney(total)} />
-            </>
+            </div>
           )}
-          {error && <p className="text-base">{error}</p>}
-        </div>
-        <div className="sticky bottom-0 flex gap-2 border-t px-5 py-3" style={{ borderColor: "var(--sf-line)", background: "var(--sf-bg)" }}>
+          <TextField label={ru.store.comment} value={comment} onChange={setComment} multiline />
+          <Totals subtotal={subtotal} fulfillment={fulfillment} delivery={deliveryPrice} quoted={quoted} />
+          {errors.min && <p className="text-base">{errors.min}</p>}
+        </>
+      )}
+      {errors.form && <p role="alert" className="text-base">{errors.form}</p>}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            if (part === "who") setStep("cart")
+            else setPart(part === "when" ? "where" : "who")
+          }}
+          className="h-11 flex-1 rounded-[14px] border text-base"
+          style={{ borderColor: "var(--sf-line)" }}
+        >
+          {ru.store.back}
+        </button>
+        {part === "when" ? (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => void send()}
+            className="h-11 flex-[2] rounded-[14px] text-base disabled:opacity-50"
+            style={{ background: "var(--sf-button-bg)", color: "var(--sf-button-text)" }}
+          >
+            {saving ? ru.store.sending : ru.store.continueWhatsapp}
+          </button>
+        ) : (
           <button
             type="button"
             onClick={() => {
-              if (part === "who") setStep("cart")
-              else setPart(part === "when" ? "where" : "who")
+              const next = problems(part)
+              setErrors(next)
+              if (Object.keys(next).length) return
+              setPart(part === "who" ? "where" : "when")
             }}
-            className="h-12 flex-1 border text-base"
-            style={{ borderColor: "var(--sf-line)", borderRadius: "var(--sf-radius)" }}
+            className="h-11 flex-[2] rounded-[14px] text-base"
+            style={{ background: "var(--sf-button-bg)", color: "var(--sf-button-text)" }}
           >
-            {ru.store.back}
+            {ru.store.more}
           </button>
-          <button
-            type="button"
-            onClick={nextPart}
-            className="h-12 flex-[2] text-base"
-            style={{ background: "var(--sf-button-bg)", color: "var(--sf-button-text)", borderRadius: "var(--sf-radius)" }}
-          >
-            {part === "when" ? ru.store.messageTitle : "Дальше"}
-          </button>
-        </div>
+        )}
       </div>
-    )
-  }
-
-  return (
-    <div className="space-y-4 px-4 pb-8">
-      {bundle.source === "fixture" && (
-        <p className="text-sm leading-6" style={{ color: "var(--sf-muted)" }}>{ru.store.fixtureNote}</p>
+      {part === "when" && (
+        <>
+          <p className="text-center text-[13px] leading-5" style={{ color: "var(--sf-muted)" }}>{ru.store.sendHint}</p>
+          {date && time && (
+            <pre className="max-h-40 overflow-auto rounded-[14px] bg-[#efe7dc] p-4 text-base leading-6 whitespace-pre-wrap text-[#111b21]">
+              {message}
+            </pre>
+          )}
+          {bundle.source === "fixture" && (
+            <p className="text-[13px] leading-5" style={{ color: "var(--sf-muted)" }}>{ru.store.fixtureNote}</p>
+          )}
+        </>
       )}
-      <pre className="overflow-x-auto p-4 text-sm leading-6 whitespace-pre-wrap" style={{ background: "#e7f6df", color: "#17301c", borderRadius: "18px" }}>
-        {message}
-      </pre>
-      {error && <p className="text-sm">{error}</p>}
-      <button
-        type="button"
-        disabled={saving}
-        onClick={() => void send()}
-        className="h-12 w-full text-sm disabled:opacity-50"
-        style={{ background: "var(--sf-button-bg)", color: "var(--sf-button-text)", borderRadius: "var(--sf-radius)" }}
-      >
-        {saving ? ru.store.sending : ru.store.send}
-      </button>
-      <p className="text-xs leading-5" style={{ color: "var(--sf-muted)" }}>{ru.store.sendHint}</p>
-      <button type="button" onClick={onClose} className="w-full text-sm" style={{ color: "var(--sf-muted)" }}>{ru.nav.close}</button>
     </div>
   )
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  multiline,
-  inputMode,
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  multiline?: boolean
-  inputMode?: "tel" | "text"
-}) {
-  const className = "mt-1.5 w-full border bg-transparent px-3 text-base"
-  const style = { borderColor: "var(--sf-line)", borderRadius: "var(--sf-radius)", color: "var(--sf-ink)" }
-  return (
-    <label className="block text-base">
-      <span style={{ color: "var(--sf-ink)" }}>{label}</span>
-      {multiline ? (
-        <textarea value={value} onChange={(event) => onChange(event.target.value)} className={`${className} min-h-20 py-2`} style={style} />
-      ) : (
-        <input value={value} inputMode={inputMode} onChange={(event) => onChange(event.target.value)} className={`${className} h-11`} style={style} />
-      )}
-    </label>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span style={{ color: "var(--sf-muted)" }}>{label}</span>
-      <span>{value}</span>
-    </div>
-  )
-}
-
-function dateChoices(timeZone: string) {
-  const start = todayIso(timeZone)
-  return [0, 1, 2, 3, 4, 5].map((offset) => {
-    const iso = addDaysIso(start, offset)
-    const [, month, day] = iso.split("-")
-    const short = `${day}.${month}`
-    const label = offset === 0 ? `Сегодня ${short}` : offset === 1 ? `Завтра ${short}` : short
-    return { iso, label }
-  })
 }
 
 async function logEvent(
